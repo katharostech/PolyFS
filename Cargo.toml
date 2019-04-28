@@ -1,0 +1,12 @@
+[package]
+name = "polyfs"
+version = "0.1.0"
+authors = ["Zicklag <zicklag@katharostech.com>"]
+edition = "2018"
+
+[dependencies]
+log = "0.4.6"
+env_logger = "0.6.1"
+clap = "2.33.0"
+#time = "0.1.42"
+#rusqlite = "0.18.0"
