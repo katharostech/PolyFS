@@ -1,0 +1,5 @@
+---
+key-value:
+  backend: sqlite
+metadata:
+  backend: sqlite
