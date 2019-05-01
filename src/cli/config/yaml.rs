@@ -1,11 +1,13 @@
 //! Utilities for handling yaml configuration
 
+use crate::cli::{CliError, CliResult};
+use crate::try_to;
+
 use std::fs;
 use std::io::Write;
 use std::iter::FromIterator;
 use std::path::Path;
 
-use crate::cli::{CliError, CliResult};
 use clap::ArgMatches;
 use linked_hash_map::LinkedHashMap;
 use yaml_rust::{Yaml, YamlEmitter, YamlLoader};
@@ -20,40 +22,30 @@ pub fn get_config<'a>(args: &ArgMatches<'a>) -> CliResult<Yaml> {
 
     if Path::new(&config_path).exists() {
         // Load config file
-        let content;
-        match fs::read_to_string(&config_path) {
-            Ok(data) => content = data,
-            Err(e) => {
-                return Err(CliError {
-                    message: String::from("Could not read config file."),
-                    cause: Some(Box::new(e)),
-                })
-            }
-        }
-        match YamlLoader::load_from_str(&content) {
-            Ok(yaml_docs) => {
-                config = yaml_docs[0].clone();
-            }
-            Err(e) => {
-                return Err(CliError {
-                    message: String::from("Could not parse yaml config file."),
-                    cause: Some(Box::new(e)),
-                })
-            }
-        }
+        let content = try_to!(
+            fs::read_to_string(&config_path),
+            "Could not read config file."
+        );
+        config = try_to!(
+            YamlLoader::load_from_str(&content),
+            "Could not parse YAML config file."
+        )[0] // We load the first doc in the YAML stream and ignore the rest
+        .clone();
     } else {
         // Config file doesn't exist, create it
-        let mut file = fs::File::create(&config_path)?;
+        let mut file = try_to!(fs::File::create(&config_path), "Create config file.");
 
         let mut yaml_string = String::new();
         let mut emitter = YamlEmitter::new(&mut yaml_string);
-        // TODO Create macro for handling these errors easiliy without panicking.
         emitter
             .dump(&get_default_config())
-            .expect("Couldn't write yaml config");
+            // This should always work; panic if it doesn't.
+            .expect("Couldn't dump yaml config.");
 
-        file.write_all(yaml_string.as_bytes())
-            .expect("Couldn't write config file");
+        try_to!(
+            file.write_all(yaml_string.as_bytes()),
+            "Couldn't write to config file."
+        );
 
         config = get_default_config();
     }

@@ -1,2 +1,5 @@
 /target
 **/*.rs.bk
+
+// Config file that might be generated while testing
+polyfs.yml

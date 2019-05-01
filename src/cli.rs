@@ -26,7 +26,7 @@ pub struct CliError {
     message: String,
     /// The actual Error that ocurred when attempting to perform the operation
     /// described by the `message`.
-    cause: Option<Box<(dyn Error)>>
+    cause: Option<Box<dyn Error>>
 }
 
 impl fmt::Display for CliError {
@@ -47,13 +47,19 @@ impl Error for CliError {
     }
 }
 
-impl From<std::io::Error> for CliError {
-    fn from(error: std::io::Error) -> Self {
-        CliError {
-            message: String::from("IO Error:"),
-            cause: Some(Box::new(error))
+#[macro_export]
+macro_rules! try_to {
+    ( $result:expr, $error_message:expr ) => {
+        match $result {
+            Ok(value) => value,
+            Err(e) => {
+                return Err(CliError {
+                    message: String::from($error_message),
+                    cause: Some(Box::new(e))
+                })
+            }
         }
-    }
+    };
 }
 
 /// Run the CLI.
