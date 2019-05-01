@@ -1,0 +1,9 @@
+key-value:
+  backend: sqlite
+  options:
+    db: kv.db
+
+metadata:
+  backend: sqlite
+  options:
+    db: meta.db

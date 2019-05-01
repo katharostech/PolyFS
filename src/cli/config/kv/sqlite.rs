@@ -6,9 +6,7 @@ use yaml_rust::{Yaml};
 /// Run `sqlite` subcommand
 pub fn run<'a>(args: ArgSet) -> CliResult<()> {
     log::debug!("Running `sqlite` subcommand");
-    let config_file: Yaml = config::yaml::get_config(args.global)?;
-
-    log::trace!("Loaded Config: {:#?}", config_file);
+    let _config_file: Yaml = config::yaml::get_config(args.global)?;
 
     Ok(())
 }

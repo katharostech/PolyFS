@@ -6,7 +6,7 @@ use clap::{App, AppSettings, Arg, ArgMatches, Shell, SubCommand};
 
 pub mod config;
 
-/// A container for the gobal CLI args and the current submodule args.
+/// A container for the global CLI args and the current submodule args.
 ///
 /// This is a convenient way to pass the arguments that a subcommand are going
 /// to need.
@@ -24,7 +24,7 @@ pub type CliResult<T> = Result<T, CliError>;
 pub struct CliError {
     /// Should describe what the program was trying to do and could not.
     message: String,
-    /// The actual Error that ocurred when attempting to perform the operation
+    /// The actual Error that occurred when attempting to perform the operation
     /// described by the `message`.
     cause: Option<Box<dyn Error>>
 }
@@ -47,16 +47,36 @@ impl Error for CliError {
     }
 }
 
+/// Utility for propagating CLI errors.
+/// 
+/// Takes a result and returns the Ok value if it is Ok and creates a CliError
+/// with the given message if the result is Err.
+///
+/// # Example
+/// ```
+/// let result: Result<&str, CliError> = Ok("hello world");
+/// let hello = try_to!(result, "Couldn't get hello message");
+/// assert_eq!(hello, "hello world");
+/// let result: Result<&str, CliError> = Err(CliError {
+///     message: "There was a problem",
+///     cause: None
+/// })
+/// let hello = try_to!(result, "Error message");
+/// ```
+/// the last line will fail returning a CliError with the message set to "Error
+/// message" and the cause set to the error in `result`.
 #[macro_export]
 macro_rules! try_to {
     ( $result:expr, $error_message:expr ) => {
         match $result {
             Ok(value) => value,
             Err(e) => {
-                return Err(CliError {
+                let error = Err(CliError {
                     message: String::from($error_message),
                     cause: Some(Box::new(e))
-                })
+                });
+                log::debug!("Error details: {:#?}", error);
+                return error
             }
         }
     };
@@ -66,7 +86,7 @@ macro_rules! try_to {
 pub fn run() {
     log::debug!("Starting CLI");
 
-    // Parse commandline arguments
+    // Parse command line arguments
     let args = parse_arguments(std::env::args_os()).unwrap_or_else(|err| {
         err.exit();
     });
@@ -105,8 +125,7 @@ pub fn get_cli() -> App<'static, 'static> {
 "A FUSE filesystem for many backends.
 
 PolyFS allows you to mount a filesystem built on a key-value store and \
-a metadata store. Multiple key-value and metadata stores are supported ( not \
-at the same time ).
+a metadata store. Multiple key-value and metadata stores are supported.
             
 Usually you will run `polyfs config kv` and `polyfs config meta` to create the \
 config file with your connection information, followed  by `polyfs mount` to \
@@ -144,7 +163,7 @@ and modified with the `config` subcommand."
                 .possible_values(&Shell::variants().to_vec())))
 }
 
-/// Parse given arguments as they would be from the commandline.
+/// Parse given arguments as they would be from the command line.
 pub fn parse_arguments<'a, I, T>(args: I) -> clap::Result<clap::ArgMatches<'a>>
 where
     I: IntoIterator<Item = T>,
