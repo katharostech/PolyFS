@@ -29,6 +29,13 @@ pub fn run<'a>(args: ArgSet) -> CliResult<()> {
             sub,
         })?,
 
+        ("dump", Some(_)) => {
+            // Dump configuration in debug format
+            let config = load_config(args.global)?;
+            log::debug!("Dumping config to standard out in debug format");
+            println!("{:#?}", config);
+        }
+
         _ => panic!(
             "Unimplemented command or failure to show help message when lacking a subcommand."
         ),
@@ -39,10 +46,17 @@ pub fn run<'a>(args: ArgSet) -> CliResult<()> {
 
 /// Get CLI for the `config` subcommand
 pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("config")
+    let mut command = SubCommand::with_name("config")
         .about("Create or update PolyFS config file")
         .subcommand(kv::get_cli())
-        .subcommand(meta::get_cli())
+        .subcommand(meta::get_cli());
+
+    if std::env::var("POLYFS_DEBUG").is_ok() {
+        command = command.subcommand(SubCommand::with_name("dump")
+            .about("Dump loaded configuration in debug format. ( a POLYFS_DEBUG command )"));
+    }
+
+    command
 }
 
 /// Load app config based provided command line arguments.
@@ -97,12 +111,13 @@ pub fn save_config<'a>(args: &ArgMatches<'a>, config: &AppConfig) -> CliResult<(
         .expect("Required config file argument doesn't exist");
 
     log::debug!("Saving config to file: {}", config_path);
-    log::trace!("Config: {:#?}", config);
 
     try_to!(
         fs::write(config_path, serialize_config(config, config_format)?),
         "Could not write config file."
     );
+
+    log::trace!("Saved configuration: {:#?}", config);
 
     Ok(())
 }
