@@ -1,23 +1,19 @@
-use crate::cli::config::ArgSet;
-use crate::cli::CliResult;
-use crate::app::config::*;
+use crate::cli::{ArgSet, CliResult};
+use crate::cli::config::{load_config, save_config, KvBackend};
+use crate::app::backends::keyvalue::sqlite::SqliteConfig;
 
 use clap::{App, Arg, SubCommand};
 
 /// Run `sqlite` subcommand
-pub fn run<'a>(_args: ArgSet) -> CliResult<()> {
+pub fn run<'a>(args: ArgSet) -> CliResult<()> {
     log::debug!("Running `sqlite` subcommand");
-    // let _config_file: Yaml = config::yaml::get_config(args.global)?;
+    let mut config = load_config(args.global)?;
 
-    let config = AppConfig {
-        key_value: KvBackend::sqlite(
-            SqliteConfig {
-                db: String::from("kv.db")
-            }
-        )
-    };
+    config.key_value = KvBackend::Sqlite(SqliteConfig {
+        db: String::from(args.sub.value_of("db").expect("Couldn't load db argument"))
+    });
 
-    println!("{}", serde_yaml::to_string(&config).unwrap());
+    save_config(args.global, &config)?;
 
     Ok(())
 }

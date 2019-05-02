@@ -66,8 +66,8 @@ mount the filesystem."
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .arg(Arg::with_name("config_file")
             .help(
-"PolyFS config file. Must be in YAML 1.2 format. Can be conveniently created \
-and modified with the `config` subcommand."
+"PolyFS config file. Must be in the format specified by the --config-format. \
+Can be conveniently created and modified with the `config` subcommand."
             )
             .long("config-file")
             .default_value("polyfs.yml")

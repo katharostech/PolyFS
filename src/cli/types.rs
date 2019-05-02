@@ -3,7 +3,6 @@ use std::fmt;
 use clap::ArgMatches;
 use clap::arg_enum;
 
-///
 /// This is a convenient way to pass the arguments that a subcommand are going
 /// to need.
 pub struct ArgSet<'a> {
