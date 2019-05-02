@@ -8,8 +8,18 @@ use clap::{App, SubCommand};
 mod sqlite;
 
 /// Run `meta` subcommand
-pub fn run<'a>(_args: ArgSet) -> CliResult<()> {
+pub fn run<'a>(args: ArgSet) -> CliResult<()> {
     log::debug!("Running `meta` subcommand");
+
+    match args.sub.subcommand() {
+        ("sqlite", Some(sub)) => sqlite::run(ArgSet {
+            global: args.global,
+            sub,
+        })?,
+        _ => panic!(
+            "Unimplemented command or failure to show help message when lacking a subcommand."
+        ),
+    }
 
     Ok(())
 }

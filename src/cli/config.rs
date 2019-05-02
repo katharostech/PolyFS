@@ -1,8 +1,7 @@
 //! `config` subcommand. Also contains utilities for accessing commandline
 //! config.
 
-use crate::app::backends::keyvalue::sqlite::SqliteConfig;
-use crate::app::config::{AppConfig, KvBackend};
+use crate::app::config::{AppConfig, get_default_config};
 use crate::cli::{ArgSet, CliResult, ConfigFormat};
 use crate::try_to;
 
@@ -44,14 +43,6 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
         .about("Create or update PolyFS config file")
         .subcommand(kv::get_cli())
         .subcommand(meta::get_cli())
-}
-
-fn get_default_config() -> AppConfig {
-    AppConfig {
-        key_value: KvBackend::Sqlite(SqliteConfig {
-            db: String::from("kv.db"),
-        }),
-    }
 }
 
 /// Load app config based provided command line arguments.
@@ -103,7 +94,10 @@ pub fn save_config<'a>(args: &ArgMatches<'a>, config: &AppConfig) -> CliResult<(
         .expect("Couldn't parse config format argument");
     let config_path = args
         .value_of("config_file")
-        .expect("Required config file argumetn doesn't exist");
+        .expect("Required config file argument doesn't exist");
+
+    log::debug!("Saving config to file: {}", config_path);
+    log::trace!("Config: {:#?}", config);
 
     try_to!(
         fs::write(config_path, serialize_config(config, config_format)?),

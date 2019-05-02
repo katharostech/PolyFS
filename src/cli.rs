@@ -9,7 +9,6 @@ pub mod config;
 
 #[macro_use]
 // The allow(missing_docs) is necessary because of the arg_enum! macro that
-// 
 #[allow(missing_docs)]
 pub mod types;
 pub use types::*;
@@ -37,6 +36,11 @@ pub fn run() {
                 log::error!("{}", e);
                 std::process::exit(1);
             });
+            log::info!(
+                "Successfully updated config file: {}",
+                args.value_of("config_file")
+                    .expect("Could not parse config-file argument.")
+            );
         }
 
         _ => panic!(
