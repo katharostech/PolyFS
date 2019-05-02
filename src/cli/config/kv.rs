@@ -1,3 +1,5 @@
+//! Key-value store configuration subcommand
+
 use crate::cli::config::{ArgSet, CliResult};
 use clap::{App, SubCommand};
 

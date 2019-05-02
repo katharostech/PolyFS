@@ -1,9 +1,10 @@
+//! `config` subcommand.
+
 use crate::cli::{ArgSet, CliResult};
 use clap::{App, SubCommand};
 
 pub mod kv;
 pub mod meta;
-pub mod yaml;
 
 /// Run `config` subcommand
 pub fn run<'a>(args: ArgSet) -> CliResult<()> {

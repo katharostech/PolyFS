@@ -1,86 +1,18 @@
-use std::ffi::OsString;
-use std::error::Error;
-use std::{io, fmt};
+//! Components of the command line interface.
 
-use clap::{App, AppSettings, Arg, ArgMatches, Shell, SubCommand};
+use std::ffi::OsString;
+use std::io;
+
+use clap::{App, AppSettings, Arg, Shell, SubCommand};
 
 pub mod config;
 
-/// A container for the global CLI args and the current submodule args.
-///
-/// This is a convenient way to pass the arguments that a subcommand are going
-/// to need.
-pub struct ArgSet<'a> {
-    /// The global CLI argument matches.
-    global: &'a ArgMatches<'a>,
-    /// The argument matches for the current subcommand.
-    sub: &'a ArgMatches<'a>,
-}
-
-pub type CliResult<T> = Result<T, CliError>;
-
-/// A CLI Error.
-#[derive(Debug)]
-pub struct CliError {
-    /// Should describe what the program was trying to do and could not.
-    message: String,
-    /// The actual Error that occurred when attempting to perform the operation
-    /// described by the `message`.
-    cause: Option<Box<dyn Error>>
-}
-
-impl fmt::Display for CliError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.source() {
-            Some(cause) => write!(f, "{}\nCaused by: {}", self.message, cause),
-            None => write!(f, "{}", self.message)
-        }
-    }
-}
-
-impl Error for CliError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match &self.cause {
-            Some(e) => Some(e.as_ref()),
-            None => None
-        }
-    }
-}
-
-/// Utility for propagating CLI errors.
-/// 
-/// Takes a result and returns the Ok value if it is Ok and creates a CliError
-/// with the given message if the result is Err.
-///
-/// # Example
-/// ```
-/// let result: Result<&str, CliError> = Ok("hello world");
-/// let hello = try_to!(result, "Couldn't get hello message");
-/// assert_eq!(hello, "hello world");
-/// let result: Result<&str, CliError> = Err(CliError {
-///     message: "There was a problem",
-///     cause: None
-/// })
-/// let hello = try_to!(result, "Error message");
-/// ```
-/// the last line will fail returning a CliError with the message set to "Error
-/// message" and the cause set to the error in `result`.
-#[macro_export]
-macro_rules! try_to {
-    ( $result:expr, $error_message:expr ) => {
-        match $result {
-            Ok(value) => value,
-            Err(e) => {
-                let error = Err(CliError {
-                    message: String::from($error_message),
-                    cause: Some(Box::new(e))
-                });
-                log::debug!("Error details: {:#?}", error);
-                return error
-            }
-        }
-    };
-}
+#[macro_use]
+// The allow(missing_docs) is necessary because of the arg_enum! macro that
+// 
+#[allow(missing_docs)]
+pub mod types;
+pub use types::*;
 
 /// Run the CLI.
 pub fn run() {
@@ -101,12 +33,11 @@ pub fn run() {
         }
 
         ("config", Some(sub)) => {
-            config::run(ArgSet { global: &args, sub })
-                .unwrap_or_else(|e| {
-                    log::error!("{}", e);
-                    std::process::exit(1);
-                });
-        },
+            config::run(ArgSet { global: &args, sub }).unwrap_or_else(|e| {
+                log::error!("{}", e);
+                std::process::exit(1);
+            });
+        }
 
         _ => panic!(
             "Unimplemented command or failure to show help message when lacking a subcommand."
@@ -119,7 +50,7 @@ pub fn run() {
 pub fn get_cli() -> App<'static, 'static> {
     App::new("PolyFS")
         .version(clap::crate_version!())
-        .author("Katharos Technology <https://katharostech.com>\n")
+        .author(clap::crate_authors!())
         .about("A FUSE filesytem for many backends.")
         .long_about(
 "A FUSE filesystem for many backends.
@@ -141,6 +72,13 @@ and modified with the `config` subcommand."
             .long("config-file")
             .default_value("polyfs.yml")
             .short("c"))
+        .arg(Arg::with_name("config_format")
+            .help("The configuration file format.")
+            .long("config-format")
+            .short("F")
+            .possible_values(&ConfigFormat::variants())
+            .case_insensitive(true)
+            .default_value("yaml"))
 
         // `config` subcommand
         .subcommand(config::get_cli())

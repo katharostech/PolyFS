@@ -1,3 +1,5 @@
+//! Metadata store configuration subcommand
+
 use crate::cli::config::ArgSet;
 use crate::cli::CliResult;
 use clap::{App, SubCommand};
