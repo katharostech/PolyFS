@@ -1,15 +1,17 @@
 use serde::{Serialize, Deserialize};
 
 /// Get the default PolyFS configuration
-pub fn get_default_config() -> AppConfig {
-    AppConfig {
-        backends: BackendConfig {
-            key_value: KvBackend::Sqlite(SqliteKvConfig {
-                db: String::from("kv.db"),
-            }),
-            metadata: MetaBackend::Sqlite(SqliteMetaConfig {
-                db: String::from("meta.db"),
-            })
+impl Default for AppConfig {
+    fn default() -> Self {
+        AppConfig {
+            backends: BackendConfig {
+                key_value: KvBackend::Sqlite(SqliteKvConfig {
+                    db: String::from("kv.db"),
+                }),
+                metadata: MetaBackend::Sqlite(SqliteMetaConfig {
+                    db: String::from("meta.db"),
+                })
+            }
         }
     }
 }

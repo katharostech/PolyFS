@@ -32,7 +32,11 @@ pub fn run() {
             "info" => log::LevelFilter::Info,
             "warn" => log::LevelFilter::Warn,
             "error" => log::LevelFilter::Error,
-            _ => panic!("Unknown logging level"),
+            unknown_level => {
+                eprintln!("Warning: Ignoring unrecognized warning level, '{}'. \
+                           Setting log level to 'warn'.", unknown_level);
+                log::LevelFilter::Warn
+            }
         }
     }
 
@@ -118,7 +122,8 @@ Can be conveniently created and modified with the `config` subcommand."
             .case_insensitive(true)
             .default_value("yaml"))
         .arg(Arg::with_name("log_level")
-            .help("Logging level.")
+            .help("Logging level. May also be configured with the POLYFS_LOG_LEVEL \
+                   environment variable.")
             .long("log-level")
             .short("L")
             .value_name("level")

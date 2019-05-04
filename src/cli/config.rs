@@ -1,7 +1,7 @@
 //! `config` subcommand. Also contains utilities for accessing commandline
 //! config.
 
-use crate::app::config::{AppConfig, get_default_config};
+use crate::app::config::{AppConfig};
 use crate::cli::{ArgSet, CliResult, ConfigFormat};
 use crate::try_to;
 
@@ -88,7 +88,7 @@ pub fn load_config<'a>(args: &ArgMatches<'a>) -> CliResult<AppConfig> {
             "Could not create config file."
         );
 
-        config = get_default_config();
+        config = AppConfig::default();
         let serialized = serialize_config(&config, config_format)?;
 
         try_to!(
