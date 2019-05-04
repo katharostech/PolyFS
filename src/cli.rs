@@ -5,6 +5,8 @@ use std::io;
 
 use clap::{App, AppSettings, Arg, Shell, SubCommand};
 
+use crate::log::{LoggingConfig, setup_logging};
+
 pub mod config;
 
 #[macro_use]
@@ -15,14 +17,44 @@ pub use types::*;
 
 /// Run the CLI.
 pub fn run() {
-    log::debug!("Starting CLI");
-
     // Parse command line arguments
     let args = parse_arguments(std::env::args_os()).unwrap_or_else(|err| {
         err.exit();
     });
 
-    log::trace!("args = {:#?}", args);
+    // Setup logging
+    let mut log_config = LoggingConfig::default();
+
+    fn map_log_level(level: &str) -> log::LevelFilter {
+        match level {
+            "trace" => log::LevelFilter::Trace,
+            "debug" => log::LevelFilter::Debug,
+            "info" => log::LevelFilter::Info,
+            "warn" => log::LevelFilter::Warn,
+            "error" => log::LevelFilter::Error,
+            _ => panic!("Unknown logging level"),
+        }
+    }
+
+    log_config.log_level = match args.value_of("log_level") {
+        Some(level) => map_log_level(level),
+        None => {
+            map_log_level(&std::env::var("POLYFS_LOG_LEVEL").unwrap_or("warn".into()))
+        }
+    };
+
+    log_config.quiet = args.is_present("quiet");
+    log_config.syslog = args.is_present("syslog");
+    log_config.log_file = args.value_of("log_file").map(|s| {String::from(s)});
+
+    setup_logging(log_config).unwrap_or_else(|e| {
+        eprintln!("{}", e);
+        std::process::exit(1)
+    });
+
+    log::debug!("Starting CLI");
+
+    log::trace!("{:#?}", args);
 
     // Run selected subcommand
     match args.subcommand() {
@@ -68,6 +100,8 @@ mount the filesystem."
         )
         .global_setting(AppSettings::ColoredHelp)
         .setting(AppSettings::SubcommandRequiredElseHelp)
+
+        // Global arguments
         .arg(Arg::with_name("config_file")
             .help(
 "PolyFS config file. Must be in the format specified by the --config-format. \
@@ -83,6 +117,24 @@ Can be conveniently created and modified with the `config` subcommand."
             .possible_values(&ConfigFormat::variants())
             .case_insensitive(true)
             .default_value("yaml"))
+        .arg(Arg::with_name("log_level")
+            .help("Logging level.")
+            .long("log-level")
+            .short("L")
+            .value_name("level")
+            .possible_values(&vec!["trace", "debug", "info", "warn", "error"]))
+        .arg(Arg::with_name("log_file")
+            .help("File to log to.")
+            .long("log-file")
+            .short("l")
+            .value_name("file"))
+        .arg(Arg::with_name("syslog")
+            .help("Log to syslog")
+            .long("syslog"))
+        .arg(Arg::with_name("quiet")
+            .help("Do not log to stderr")
+            .long("quiet")
+            .short("q"))
 
         // `config` subcommand
         .subcommand(config::get_cli())

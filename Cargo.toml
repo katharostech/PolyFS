@@ -6,17 +6,24 @@ edition = "2018"
 
 [dependencies]
 # Logging
-log = "0.4.6"
-env_logger = "0.6.1"
+    # Logging interface
+    log = "0.4.6"
+    # Used for timestamps
+    chrono = "0.4.6"
+    # Used for syslog integration
+    syslog = "4.0.1"
+    # Logging framework
+    fern = { version = "0.5.8", features = ["colored", "syslog-4"] }
 
 # Commandline Parsing
-clap = { version = "2.33.0", features = ["wrap_help"] }
+    # Framework
+    clap = { version = "2.33.0", features = ["wrap_help"] }
 
 # Serialization
-serde = { version = "1.0.90", features = ["derive"] }
-serde_json = "1.0.39"
-serde_yaml = "0.8.8"
+    # Framework
+    serde = { version = "1.0.90", features = ["derive"] }
 
-# Temporary
-yaml-rust = "0.4.3" # TODO: To be replaced by Serde
-linked-hash-map = "0.5.2"
+    # Formats
+    serde_json = "1.0.39"
+    serde_yaml = "0.8.8"
+
