@@ -13,6 +13,7 @@ use std::path::Path;
 
 pub mod kv;
 pub mod meta;
+pub mod default;
 
 /// Run `config` subcommand
 pub fn run<'a>(args: ArgSet) -> CliResult<()> {
@@ -36,6 +37,11 @@ pub fn run<'a>(args: ArgSet) -> CliResult<()> {
             println!("{:#?}", config);
         }
 
+        ("default", Some(sub)) => default::run(ArgSet {
+            global: args.global,
+            sub,
+        })?,
+
         _ => panic!(
             "Unimplemented command or failure to show help message when lacking a subcommand."
         ),
@@ -49,7 +55,8 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
     let mut command = SubCommand::with_name("config")
         .about("Create or update PolyFS config file")
         .subcommand(kv::get_cli())
-        .subcommand(meta::get_cli());
+        .subcommand(meta::get_cli())
+        .subcommand(default::get_cli());
 
     if std::env::var("POLYFS_DEBUG").is_ok() {
         command = command.subcommand(SubCommand::with_name("dump")
@@ -118,6 +125,50 @@ pub fn save_config<'a>(args: &ArgMatches<'a>, config: &AppConfig) -> CliResult<(
     );
 
     log::trace!("Saved configuration: {:#?}", config);
+
+    Ok(())
+}
+
+/// Save the config file with the default settings
+///
+/// If `force` is `true` config file will be overwritten, otherwise user will be
+/// prompted.
+pub fn save_default_config<'a>(args: &ArgMatches<'a>, force: bool) -> CliResult<()> {
+    let config_path = args
+        .value_of("config_file")
+        .expect("Required config file argument doesn't exist");
+
+    let write_config = || {
+        save_config(args, &AppConfig::default())?;
+
+        Ok(())
+    };
+
+    if Path::new(&config_path).exists() {
+        if force {
+            write_config()?;
+        } else {
+            eprintln!(
+                "Config file, '{}', exists, overwrite? Type \"yes\" to confirm:",
+                config_path
+            );
+
+            let mut prompt_result = String::new();
+            try_to!(
+                std::io::stdin().read_line(&mut prompt_result),
+                "Could not readline for prompt"
+            );
+
+            if &prompt_result.trim() == &"yes" {
+                write_config()?;
+            } else {
+                log::warn!("Not applying config");
+                std::process::exit(0);
+            }
+        }
+    } else {
+        write_config()?;
+    }
 
     Ok(())
 }
