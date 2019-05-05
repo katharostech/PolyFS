@@ -7,13 +7,15 @@ use clap::{App, AppSettings, Arg, Shell, SubCommand};
 
 use crate::log::{LoggingConfig, setup_logging};
 
-pub mod config;
-
 #[macro_use]
 // The allow(missing_docs) is necessary because of the arg_enum! macro that
 #[allow(missing_docs)]
 pub mod types;
 pub use types::*;
+
+// Subcommands
+pub mod config;
+pub mod mount;
 
 /// Run the CLI.
 pub fn run() {
@@ -77,6 +79,13 @@ pub fn run() {
                 args.value_of("config_file")
                     .expect("Could not parse config-file argument.")
             );
+        },
+
+        ("mount", Some(sub)) => {
+            mount::run(ArgSet { global: &args, sub }).unwrap_or_else(|e| {
+                log::error!("{}", e);
+                std::process::exit(1);
+            });
         }
 
         _ => panic!(
@@ -144,15 +153,7 @@ Can be conveniently created and modified with the `config` subcommand."
         // `config` subcommand
         .subcommand(config::get_cli())
 
-        .subcommand(SubCommand::with_name("mount")
-            .about("Mount a backend as a filesystem")
-            .arg(Arg::with_name("read_only")
-                .long("read-only")
-                .short("r")
-                .help("Mount the filesystem as read-only"))
-            .arg(Arg::with_name("mountpoint")
-                    .help("location to mount the filesystem")
-                    .required(true)))
+        .subcommand(mount::get_cli())
 
         .subcommand(SubCommand::with_name("completion")
             .about("Output shell completion scripts")
