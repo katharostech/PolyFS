@@ -129,50 +129,6 @@ pub fn save_config<'a>(args: &ArgMatches<'a>, config: &AppConfig) -> CliResult<(
     Ok(())
 }
 
-/// Save the config file with the default settings
-///
-/// If `force` is `true` config file will be overwritten, otherwise user will be
-/// prompted.
-pub fn save_default_config<'a>(args: &ArgMatches<'a>, force: bool) -> CliResult<()> {
-    let config_path = args
-        .value_of("config_file")
-        .expect("Required config file argument doesn't exist");
-
-    let write_config = || {
-        save_config(args, &AppConfig::default())?;
-
-        Ok(())
-    };
-
-    if Path::new(&config_path).exists() {
-        if force {
-            write_config()?;
-        } else {
-            eprintln!(
-                "Config file, '{}', exists, overwrite? Type \"yes\" to confirm:",
-                config_path
-            );
-
-            let mut prompt_result = String::new();
-            try_to!(
-                std::io::stdin().read_line(&mut prompt_result),
-                "Could not readline for prompt"
-            );
-
-            if &prompt_result.trim() == &"yes" {
-                write_config()?;
-            } else {
-                log::warn!("Not applying config");
-                std::process::exit(0);
-            }
-        }
-    } else {
-        write_config()?;
-    }
-
-    Ok(())
-}
-
 /// Serialize an `AppConfig` object for a given config format.
 pub fn serialize_config(config: &AppConfig, format: ConfigFormat) -> CliResult<String> {
     Ok(match format {
