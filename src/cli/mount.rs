@@ -1,9 +1,10 @@
 //! PolyFS `mount` subcommand
 
-use crate::cli::{ArgSet, CliResult};
+use crate::PolyfsResult;
+use crate::cli::ArgSet;
 use clap::{App, Arg, SubCommand};
 
-/// Get CLI for the `config` subcommand
+/// Get CLI for the `mount` subcommand
 pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
     SubCommand::with_name("mount")
         .about("Mount the filesystem")
@@ -16,7 +17,8 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
                 .required(true))
 }
 
-pub fn run(args: ArgSet) -> CliResult<()> {
+/// Run `mount` subcommand
+pub fn run(_args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `mount` subcommand");
 
     Ok(())

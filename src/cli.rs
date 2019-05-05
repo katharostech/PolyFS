@@ -3,19 +3,41 @@
 use std::ffi::OsString;
 use std::io;
 
-use clap::{App, AppSettings, Arg, Shell, SubCommand};
+use clap::{App, AppSettings, Arg, ArgMatches, Shell, SubCommand};
 
 use crate::log::{LoggingConfig, setup_logging};
-
-#[macro_use]
-// The allow(missing_docs) is necessary because of the arg_enum! macro that
-#[allow(missing_docs)]
-pub mod types;
-pub use types::*;
 
 // Subcommands
 pub mod config;
 pub mod mount;
+
+/// This is a convenient way to pass the arguments that a subcommand are going
+/// to need.
+pub struct ArgSet<'a> {
+    /// The global CLI argument matches.
+    pub global: &'a ArgMatches<'a>,
+    /// The argument matches for the current subcommand.
+    pub sub: &'a ArgMatches<'a>,
+}
+
+// It is impossible to fully document enums made with the `arg_enum` macro, so
+// put them in a module and allow missing docs on that module.
+#[allow(missing_docs)]
+mod arg_enums {
+    use clap::arg_enum;
+
+    arg_enum! {
+        /// A file format supported for the PolyFS config file
+        #[allow(non_camel_case_types, missing_docs)]
+        #[derive(PartialEq, Debug)]
+        pub enum ConfigFormat {
+            yaml,
+            json,
+        }
+    }
+}
+
+pub use arg_enums::ConfigFormat;
 
 /// Run the CLI.
 pub fn run() {

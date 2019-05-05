@@ -1,14 +1,14 @@
 //! Metadata store configuration subcommand
 
+use crate::PolyfsResult;
 use crate::cli::config::ArgSet;
-use crate::cli::CliResult;
 use clap::{App, SubCommand};
 
 // Backends
 mod sqlite;
 
 /// Run `meta` subcommand
-pub fn run<'a>(args: ArgSet) -> CliResult<()> {
+pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `meta` subcommand");
 
     match args.sub.subcommand() {

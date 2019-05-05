@@ -2,7 +2,8 @@
 //! config.
 
 use crate::app::config::{AppConfig};
-use crate::cli::{ArgSet, CliResult, ConfigFormat};
+use crate::PolyfsResult;
+use crate::cli::{ArgSet, ConfigFormat};
 use crate::try_to;
 
 use clap::{value_t, App, ArgMatches, SubCommand};
@@ -16,7 +17,7 @@ pub mod meta;
 pub mod default;
 
 /// Run `config` subcommand
-pub fn run<'a>(args: ArgSet) -> CliResult<()> {
+pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `config` subcommand");
 
     match args.sub.subcommand() {
@@ -67,7 +68,7 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
 }
 
 /// Load app config based provided command line arguments.
-pub fn load_config<'a>(args: &ArgMatches<'a>) -> CliResult<AppConfig> {
+pub fn load_config<'a>(args: &ArgMatches<'a>) -> PolyfsResult<AppConfig> {
     let config_format = value_t!(args, "config_format", ConfigFormat)
         .expect("Couldn't parse config format argument");
     let config_path = args
@@ -110,7 +111,7 @@ pub fn load_config<'a>(args: &ArgMatches<'a>) -> CliResult<AppConfig> {
 }
 
 /// Save config file with the provide config
-pub fn save_config<'a>(args: &ArgMatches<'a>, config: &AppConfig) -> CliResult<()> {
+pub fn save_config<'a>(args: &ArgMatches<'a>, config: &AppConfig) -> PolyfsResult<()> {
     let config_format = value_t!(args, "config_format", ConfigFormat)
         .expect("Couldn't parse config format argument");
     let config_path = args
@@ -130,7 +131,7 @@ pub fn save_config<'a>(args: &ArgMatches<'a>, config: &AppConfig) -> CliResult<(
 }
 
 /// Serialize an `AppConfig` object for a given config format.
-pub fn serialize_config(config: &AppConfig, format: ConfigFormat) -> CliResult<String> {
+pub fn serialize_config(config: &AppConfig, format: ConfigFormat) -> PolyfsResult<String> {
     Ok(match format {
         ConfigFormat::yaml => try_to!(serde_yaml::to_string(config), "Could not serialize config."),
         ConfigFormat::json => try_to!(
@@ -141,7 +142,7 @@ pub fn serialize_config(config: &AppConfig, format: ConfigFormat) -> CliResult<S
 }
 
 /// Deserialize a string representation in a given format to an `AppConfig` object.
-fn deserialize_config(config: &str, format: ConfigFormat) -> CliResult<AppConfig> {
+fn deserialize_config(config: &str, format: ConfigFormat) -> PolyfsResult<AppConfig> {
     Ok(match format {
         ConfigFormat::yaml => try_to!(
             serde_yaml::from_str(config),

@@ -1,9 +1,9 @@
 //! Create default configuration file
 use std::path::Path;
 
+use crate::{PolyfsResult, try_to};
 use crate::app::config::AppConfig;
-use crate::try_to;
-use crate::cli::{ArgSet, CliResult};
+use crate::cli::ArgSet;
 use crate::cli::config::save_config;
 
 use clap::{App, Arg, SubCommand};
@@ -19,7 +19,7 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
 }
 
 /// Save the default configuration
-pub fn run(args: ArgSet) -> CliResult<()> {
+pub fn run(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `default` subcommand");
 
     let force = args.sub.is_present("force");

@@ -1,13 +1,14 @@
 //! Key-value store configuration subcommand
 
-use crate::cli::config::{ArgSet, CliResult};
+use crate::PolyfsResult;
+use crate::cli::config::{ArgSet};
 use clap::{App, SubCommand};
 
 // Backends
 mod sqlite;
 
 /// Run `kv` subcommand
-pub fn run<'a>(args: ArgSet) -> CliResult<()> {
+pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `kv` subcommand");
 
     match args.sub.subcommand() {
