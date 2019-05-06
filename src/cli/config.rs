@@ -12,6 +12,7 @@ use std::fs;
 use std::io::Write;
 use std::path::Path;
 
+pub mod dual;
 pub mod kv;
 pub mod meta;
 pub mod default;
@@ -133,10 +134,10 @@ pub fn save_config<'a>(args: &ArgMatches<'a>, config: &AppConfig) -> PolyfsResul
 /// Serialize an `AppConfig` object for a given config format.
 pub fn serialize_config(config: &AppConfig, format: ConfigFormat) -> PolyfsResult<String> {
     Ok(match format {
-        ConfigFormat::yaml => try_to!(serde_yaml::to_string(config), "Could not serialize config."),
+        ConfigFormat::yaml => try_to!(serde_yaml::to_string(config), "Could not serialize config"),
         ConfigFormat::json => try_to!(
             serde_json::to_string_pretty(config),
-            "Could not serialize config."
+            "Could not serialize config"
         ),
     })
 }
@@ -146,11 +147,11 @@ fn deserialize_config(config: &str, format: ConfigFormat) -> PolyfsResult<AppCon
     Ok(match format {
         ConfigFormat::yaml => try_to!(
             serde_yaml::from_str(config),
-            "Could not deserialize config."
+            "Could not deserialize config"
         ),
         ConfigFormat::json => try_to!(
             serde_json::from_str(config),
-            "Could not deserialize config."
+            "Could not deserialize config"
         ),
     })
 }

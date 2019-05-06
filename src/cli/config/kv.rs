@@ -5,7 +5,8 @@ use crate::cli::config::{ArgSet};
 use clap::{App, SubCommand};
 
 // Backends
-mod sqlite;
+use crate::app::backends::BackendType;
+use super::dual::sqlite;
 
 /// Run `kv` subcommand
 pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
@@ -15,7 +16,7 @@ pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
         ("sqlite", Some(sub)) => sqlite::run(ArgSet {
             global: args.global,
             sub,
-        })?,
+        }, BackendType::KeyValue)?,
         _ => panic!(
             "Unimplemented command or failure to show help message when lacking a subcommand."
         ),

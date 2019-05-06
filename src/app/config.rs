@@ -1,15 +1,16 @@
 use serde::{Serialize, Deserialize};
+use crate::app::backends::dual::sqlite::{SqliteConfig, SqliteDb};
 
 /// Get the default PolyFS configuration
 impl Default for AppConfig {
     fn default() -> Self {
         AppConfig {
             backends: BackendConfig {
-                key_value: KvBackend::Sqlite(SqliteKvConfig {
-                    db: String::from("kv.db"),
+                key_value: KvBackend::Sqlite(SqliteConfig {
+                    db: SqliteDb::File("kv.sqlite3".into()),
                 }),
-                metadata: MetaBackend::Sqlite(SqliteMetaConfig {
-                    db: String::from("meta.db"),
+                metadata: MetaBackend::Sqlite(SqliteConfig {
+                    db: SqliteDb::File("meta.sqlite3".into())
                 })
             }
         }
@@ -33,24 +34,20 @@ pub struct BackendConfig {
 // Key-Value Backends
 //
 
-use crate::app::backends::keyvalue::sqlite::SqliteConfig as SqliteKvConfig;
-
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub enum KvBackend {
     #[serde(rename = "sqlite")]
-    Sqlite(SqliteKvConfig)
+    Sqlite(SqliteConfig)
 }
 
 //
 // Metadata Backends
 //
 
-use crate::app::backends::metadata::sqlite::SqliteConfig as SqliteMetaConfig;
-
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub enum MetaBackend {
     #[serde(rename = "sqlite")]
-    Sqlite(SqliteMetaConfig)
+    Sqlite(SqliteConfig)
 }

@@ -13,10 +13,11 @@ pub type PolyfsResult<T> = Result<T, PolyfsError>;
 
 /// The PolyFS Error class
 ///
-/// Every PolyFS error can has a message and an optional cause.
+/// Every PolyFS error has a message and an optional cause.
 #[derive(Debug)]
 pub struct PolyfsError {
-    /// Should describe what the program was trying to do and could not.
+    /// Should describe what the program was trying to do and could not ( i.e.
+    /// `Could not create config file` ).
     pub message: String,
     /// The actual Error that occurred when attempting to perform the operation
     /// described by the `message`.
