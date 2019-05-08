@@ -1,3 +1,5 @@
+//! Module containing the different filesystem backends
+
 pub mod dual;
 pub mod keyvalue;
 pub mod metadata;

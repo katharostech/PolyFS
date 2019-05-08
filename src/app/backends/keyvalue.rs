@@ -1,3 +1,5 @@
+//! Module containing key-value storage specific backends and types
+
 /// The result of a KeyValueStore operation
 pub type KeyValueResult<T> = Result<T, KeyValueError>;
 

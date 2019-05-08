@@ -1,3 +1,5 @@
+//! Module containing aspects of the global application configuration
+
 use serde::{Serialize, Deserialize};
 use crate::app::backends::dual::sqlite::{SqliteConfig, SqliteDb};
 

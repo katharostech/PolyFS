@@ -1,3 +1,5 @@
+//! Contains logging configuration and setup functions
+
 /// Configuration struct for PolyFS's logging behavior
 pub struct LoggingConfig {
     /// The level of logs to include in output

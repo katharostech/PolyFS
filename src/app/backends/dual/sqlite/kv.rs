@@ -1,3 +1,5 @@
+//! Sqlite key-value store implementation
+
 use crate::app::backends::keyvalue::{KeyValueError, KeyValueResult, KeyValueStore};
 use crate::{PolyfsResult, try_to};
 
@@ -45,6 +47,8 @@ impl SqliteKvStore {
             "Could not connect to database for KV store"
         );
 
+        // TODO: Migrations should not be run without warning the user to backup
+        // their database first
         try_to!(
             embedded_migrations::run(&conn),
             "Could not run database migrations"

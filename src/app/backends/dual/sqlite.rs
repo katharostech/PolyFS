@@ -1,3 +1,5 @@
+//! Sqlite storage backend
+
 use serde::{Serialize, Deserialize};
 
 /// Sqlite database configuation structure
