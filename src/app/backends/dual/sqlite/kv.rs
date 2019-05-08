@@ -1,16 +1,20 @@
-use crate::app::backends::keyvalue::{KeyValueStore, KeyValueResult, KeyValueError};
-use crate::{try_to, PolyfsResult};
+use crate::app::backends::keyvalue::{KeyValueError, KeyValueResult, KeyValueStore};
+use crate::{PolyfsResult, try_to};
 
 use super::{SqliteConfig, SqliteDb};
 
 use diesel::prelude::*;
+use diesel::result::Error as DieselError;
 use diesel::sqlite::SqliteConnection;
 
 use diesel_migrations::embed_migrations;
 
 embed_migrations!("src/app/backends/dual/sqlite/kv-migrations");
 
-#[derive(Queryable)]
+use super::kv_schema::kv_store;
+
+#[derive(Queryable, Insertable)]
+#[table_name = "kv_store"]
 pub struct KvPair {
     pub key: String,
     pub value: String,
@@ -41,24 +45,140 @@ impl SqliteKvStore {
             "Could not connect to database for KV store"
         );
 
-        try_to!(embedded_migrations::run(&conn), "Could not run migrations");
+        try_to!(
+            embedded_migrations::run(&conn),
+            "Could not run database migrations"
+        );
 
         Ok(SqliteKvStore { config, conn })
     }
 }
 
 impl KeyValueStore for SqliteKvStore {
-    fn get(&self, key: &str) -> KeyValueResult<String> {
-        use super::kv_schema::kv_store;
-
-        let results: Vec<KvPair> = kv_store::table
+    fn get(&self, key: &str) -> KeyValueResult<Option<String>> {
+        match kv_store::table
             .filter(kv_store::key.eq(key))
-            .load::<KvPair>(&self.conn)?;
-
-        if results.len() > 0 {
-            Ok(results[0].value.clone())
-        } else {
-            Err(KeyValueError::KeyNotFound)
+            .get_result::<KvPair>(&self.conn)
+        {
+            Ok(kv_pair) => Ok(Some(kv_pair.value)),
+            Err(DieselError::NotFound) => Ok(None),
+            Err(other_error) => Err(KeyValueError::DatabaseError(other_error)),
         }
+    }
+
+    fn set(&self, key: &str, value: &str) -> KeyValueResult<()> {
+        diesel::insert_into(kv_store::table)
+            .values(KvPair {
+                key: key.into(),
+                value: value.into(),
+            })
+            .execute(&self.conn)?;
+
+        Ok(())
+    }
+
+    fn update(&self, key: &str, value: &str) -> KeyValueResult<()> {
+        diesel::update(kv_store::table.filter(kv_store::key.eq(key)))
+            .set(kv_store::value.eq(value))
+            .execute(&self.conn)?;
+
+        Ok(())
+    }
+
+    fn delete(&self, key: &str) -> KeyValueResult<()> {
+        diesel::delete(kv_store::table.filter(kv_store::key.eq(key))).execute(&self.conn)?;
+
+        Ok(())
+    }
+
+    fn list(&self) -> KeyValueResult<Vec<String>> {
+        Ok(kv_store::table
+            .select(kv_store::key)
+            .load::<String>(&self.conn)?)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::app::backends::keyvalue::KeyValueStore;
+
+    type TestResult = Result<(), Box<dyn std::error::Error>>;
+
+    const DB_CONFIG: SqliteConfig = SqliteConfig {
+        db: SqliteDb::InMemory,
+    };
+
+    #[test]
+    fn set_and_get() -> TestResult {
+        let kv_store = SqliteKvStore::new(DB_CONFIG)?;
+
+        // Set a couple values then get them
+        kv_store.set("hello", "world")?;
+        kv_store.set("goodbye", "later")?;
+        assert_eq!(kv_store.get("hello")?.unwrap(), "world");
+        assert_eq!(kv_store.get("goodbye")?.unwrap(), "later");
+
+        Ok(())
+    }
+
+    #[test]
+    fn set_and_update_key() -> TestResult {
+        let kv_store = SqliteKvStore::new(DB_CONFIG)?;
+
+        kv_store.set("hello", "world")?;
+        assert_eq!(kv_store.get("hello")?.unwrap(), "world");
+        kv_store.update("hello", "mister")?;
+        assert_eq!(kv_store.get("hello")?.unwrap(), "mister");
+
+        Ok(())
+    }
+
+    #[test]
+    fn double_set_key_fails() -> TestResult {
+        let kv_store = SqliteKvStore::new(DB_CONFIG)?;
+
+        kv_store.set("hello", "world")?;
+        match kv_store.set("hello", "mister") {
+            Ok(_) => panic!("Double setting key was allows when it should not have been"),
+            Err(_) => Ok(()), // Double setting key fails as expected
+        }
+    }
+
+    #[test]
+    fn get_nothing() -> TestResult {
+        let kv_store = SqliteKvStore::new(DB_CONFIG)?;
+
+        // Get a non-existant value
+        assert_eq!(kv_store.get("none")?, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn delete_key() -> TestResult {
+        let kv_store = SqliteKvStore::new(DB_CONFIG)?;
+
+        // Set a value and make sure it is set
+        kv_store.set("hello", "world")?;
+        assert_eq!(kv_store.get("hello")?.unwrap(), "world");
+
+        // Delete a value and make sure it is none afterwards
+        kv_store.delete("hello")?;
+        assert_eq!(kv_store.get("hello")?, None);
+
+        Ok(())
+    }
+
+    #[test]
+    fn list_keys() -> TestResult {
+        let kv_store = SqliteKvStore::new(DB_CONFIG)?;
+
+        kv_store.set("hello", "world")?;
+        kv_store.set("goodbye", "world")?;
+
+        assert_eq!(kv_store.list()?.sort(), vec!["hello", "goodbye"].sort());
+
+        Ok(())
     }
 }

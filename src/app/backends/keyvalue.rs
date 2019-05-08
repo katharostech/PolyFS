@@ -1,19 +1,26 @@
-use diesel::result::Error as DieselError;
-
-/// Key value store result type
+/// The result of a KeyValueStore operation
 pub type KeyValueResult<T> = Result<T, KeyValueError>;
 
-/// The key value error type
+/// An error resulting from a KeyValue store operation
 #[derive(Debug)]
 pub enum KeyValueError {
-    /// Failure to connect to database
-    DatabaseError(DieselError),
-    /// Key does not exist
-    KeyNotFound
+    /// A diesel error returned as a result of the operation.
+    DatabaseError(diesel::result::Error)
 }
 
-impl std::convert::From<DieselError> for KeyValueError {
-    fn from(error: DieselError) -> Self {
+use std::fmt;
+impl fmt::Display for KeyValueError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            KeyValueError::DatabaseError(error) => write!(f, "DatabaseError: {}", error)
+        }
+    }
+}
+
+impl std::error::Error for KeyValueError {}
+
+impl From<diesel::result::Error> for KeyValueError {
+    fn from(error: diesel::result::Error) -> Self {
         KeyValueError::DatabaseError(error)
     }
 }
@@ -21,7 +28,13 @@ impl std::convert::From<DieselError> for KeyValueError {
 /// A key value store
 pub trait KeyValueStore {
     /// Get the value of a key
-    fn get(&self, key: &str) -> KeyValueResult<String>;
-    // fn set(&self, key: &str) -> PolyfsResult<()>;
-    // fn list(&self) -> PolyfsResult<&[&str]>;
+    fn get(&self, key: &str) -> KeyValueResult<Option<String>>;
+    /// Set the value of a key. The key must not already exist, if the key already exists
+    fn set(&self, key: &str, value: &str) -> KeyValueResult<()>;
+    /// Update a key with a new value
+    fn update(&self, key: &str, value: &str) -> KeyValueResult<()>;
+    /// Delete a key and its value
+    fn delete(&self, key: &str) -> KeyValueResult<()>;
+    /// List all keys in the store
+    fn list(&self) -> KeyValueResult<Vec<String>>;
 }
