@@ -1,4 +1,4 @@
-use crate::app::backends::keyvalue::{KeyValueResult, KeyValueStore};
+use crate::app::backends::keyvalue::{KeyValueStore, KeyValueResult, KeyValueError};
 use crate::{try_to, PolyfsResult};
 
 use super::{SqliteConfig, SqliteDb};
@@ -51,16 +51,14 @@ impl KeyValueStore for SqliteKvStore {
     fn get(&self, key: &str) -> KeyValueResult<String> {
         use super::kv_schema::kv_store;
 
-        // TODO: Don't use expect, use try_to or match
         let results: Vec<KvPair> = kv_store::table
             .filter(kv_store::key.eq(key))
-            .load::<KvPair>(&self.conn)
-            .expect("Could not connect to database");
+            .load::<KvPair>(&self.conn)?;
 
         if results.len() > 0 {
             Ok(results[0].value.clone())
         } else {
-            Ok("Key not found".into())
+            Err(KeyValueError::KeyNotFound)
         }
     }
 }

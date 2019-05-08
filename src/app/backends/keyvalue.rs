@@ -1,3 +1,5 @@
+use diesel::result::Error as DieselError;
+
 /// Key value store result type
 pub type KeyValueResult<T> = Result<T, KeyValueError>;
 
@@ -5,9 +7,15 @@ pub type KeyValueResult<T> = Result<T, KeyValueError>;
 #[derive(Debug)]
 pub enum KeyValueError {
     /// Failure to connect to database
-    ConnectionError(Box<dyn std::error::Error>),
+    DatabaseError(DieselError),
     /// Key does not exist
     KeyNotFound
+}
+
+impl std::convert::From<DieselError> for KeyValueError {
+    fn from(error: DieselError) -> Self {
+        KeyValueError::DatabaseError(error)
+    }
 }
 
 /// A key value store

@@ -1,5 +1,6 @@
 //! PolyFS `mount` subcommand
 
+use crate::try_to;
 use crate::PolyfsResult;
 use crate::cli::ArgSet;
 use crate::cli::config::load_config;
@@ -22,7 +23,7 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
 pub fn run(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `mount` subcommand");
 
-    use crate::app::backends::keyvalue::KeyValueStore;
+    use crate::app::backends::keyvalue::{KeyValueStore, KeyValueError};
     use crate::app::backends::dual::sqlite::SqliteKvStore;
     use crate::app::config::KvBackend;
 
@@ -35,8 +36,12 @@ pub fn run(args: ArgSet) -> PolyfsResult<()> {
         }
     }
 
-    /// TODO: Convert this error
-    println!("{}", kv_store.get("test").expect("TODO: Convert this error"));
+    // TODO: Convert this error
+    match kv_store.get("test") {
+        Ok(value) => println!("{}", value),
+        Err(KeyValueError::KeyNotFound) => println!("Key not found"),
+        Err(KeyValueError::DatabaseError(e)) => try_to!(Err(e), "Couldn't connect to database"),
+    }
 
     Ok(())
 }
