@@ -15,6 +15,9 @@ edition = "2018"
     # Logging framework
     fern = { version = "0.5.8", features = ["colored", "syslog-4"] }
 
+# FUSE
+fuse_mt = "0.4.4"
+
 # Commandline Parsing
     # Framework
     clap = { version = "2.33.0", features = ["wrap_help"] }
@@ -29,5 +32,5 @@ edition = "2018"
 
 # Backends
     # Dual
-    rusqlite = "0.18.0"
- 
+    diesel = { version = "1.4.2", features = ["sqlite"] }
+    diesel_migrations = "1.4.0"

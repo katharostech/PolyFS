@@ -18,3 +18,8 @@ pub enum SqliteDb {
     File(String),
 }
 
+pub mod kv;
+pub mod kv_schema;
+
+pub use kv::SqliteKvStore;
+

@@ -5,6 +5,7 @@ use crate::app::backends::dual::sqlite::{SqliteConfig, SqliteDb};
 impl Default for AppConfig {
     fn default() -> Self {
         AppConfig {
+            // TODO: Implement default individually the different types
             backends: BackendConfig {
                 key_value: KvBackend::Sqlite(SqliteConfig {
                     db: SqliteDb::File("kv.sqlite3".into()),

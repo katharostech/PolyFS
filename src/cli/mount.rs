@@ -2,7 +2,7 @@
 
 use crate::PolyfsResult;
 use crate::cli::ArgSet;
-// use crate::cli::config::load_config;
+use crate::cli::config::load_config;
 use clap::{App, Arg, SubCommand};
 
 /// Get CLI for the `mount` subcommand
@@ -19,23 +19,24 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
 }
 
 /// Run `mount` subcommand
-pub fn run(_args: ArgSet) -> PolyfsResult<()> {
+pub fn run(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `mount` subcommand");
 
-    // use crate::app::backends::keyvalue::KeyValueStore;
-    // use crate::app::backends::dual::sqlite::SqliteKvStore;
-    // use crate::app::config::KvBackend;
+    use crate::app::backends::keyvalue::KeyValueStore;
+    use crate::app::backends::dual::sqlite::SqliteKvStore;
+    use crate::app::config::KvBackend;
 
-    // let config = load_config(args.global)?;
+    let config = load_config(args.global)?;
 
-    // let kv_store:SqliteKvStore;
-    // match config.backends.key_value {
-    //     KvBackend::Sqlite(sqlite_config) => {
-    //         kv_store = SqliteKvStore::new(sqlite_config)?;
-    //     }
-    // }
+    let kv_store:SqliteKvStore;
+    match config.backends.key_value {
+        KvBackend::Sqlite(sqlite_config) => {
+            kv_store = SqliteKvStore::new(sqlite_config)?;
+        }
+    }
 
-    // println!("{}", kv_store.get("test")?);
+    /// TODO: Convert this error
+    println!("{}", kv_store.get("test").expect("TODO: Convert this error"));
 
     Ok(())
 }

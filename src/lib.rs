@@ -1,6 +1,11 @@
 #[warn(missing_docs)]
 #[warn(future_incompatible)]
 
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
+
 pub mod cli;
 pub mod log;
 pub mod app;
