@@ -67,19 +67,11 @@ impl KeyValueStore for SqliteKvStore {
     }
 
     fn set(&self, key: &str, value: &str) -> KeyValueResult<()> {
-        diesel::insert_into(kv_store::table)
+        diesel::replace_into(kv_store::table)
             .values(KvPair {
                 key: key.into(),
                 value: value.into(),
             })
-            .execute(&self.conn)?;
-
-        Ok(())
-    }
-
-    fn update(&self, key: &str, value: &str) -> KeyValueResult<()> {
-        diesel::update(kv_store::table.filter(kv_store::key.eq(key)))
-            .set(kv_store::value.eq(value))
             .execute(&self.conn)?;
 
         Ok(())
@@ -128,21 +120,10 @@ mod test {
 
         kv_store.set("hello", "world")?;
         assert_eq!(kv_store.get("hello")?.unwrap(), "world");
-        kv_store.update("hello", "mister")?;
+        kv_store.set("hello", "mister")?;
         assert_eq!(kv_store.get("hello")?.unwrap(), "mister");
 
         Ok(())
-    }
-
-    #[test]
-    fn double_set_key_fails() -> TestResult {
-        let kv_store = SqliteKvStore::new(DB_CONFIG)?;
-
-        kv_store.set("hello", "world")?;
-        match kv_store.set("hello", "mister") {
-            Ok(_) => panic!("Double setting key was allows when it should not have been"),
-            Err(_) => Ok(()), // Double setting key fails as expected
-        }
     }
 
     #[test]

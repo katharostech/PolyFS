@@ -29,10 +29,8 @@ impl From<diesel::result::Error> for KeyValueError {
 pub trait KeyValueStore {
     /// Get the value of a key
     fn get(&self, key: &str) -> KeyValueResult<Option<String>>;
-    /// Set the value of a key. The key must not already exist, if the key already exists
+    /// Set the value of a key
     fn set(&self, key: &str, value: &str) -> KeyValueResult<()>;
-    /// Update a key with a new value
-    fn update(&self, key: &str, value: &str) -> KeyValueResult<()>;
     /// Delete a key and its value
     fn delete(&self, key: &str) -> KeyValueResult<()>;
     /// List all keys in the store

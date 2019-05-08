@@ -26,21 +26,22 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
 pub fn run(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `mount` subcommand");
 
+    use crate::try_to;
     use crate::app::backends::dual::sqlite::SqliteKvStore;
     use crate::app::backends::keyvalue::KeyValueStore;
     use crate::app::config::KvBackend;
 
     let config = load_config(args.global)?;
 
-    // let kv_store;
-    // match config.backends.key_value {
-    //     KvBackend::Sqlite(sqlite_config) => {
-    //         kv_store = SqliteKvStore::new(sqlite_config)?;
-    //     }
-    // }
+    let kv_store;
+    match config.backends.key_value {
+        KvBackend::Sqlite(sqlite_config) => {
+            kv_store = SqliteKvStore::new(sqlite_config)?;
+        }
+    }
 
-    // kv_store.set("hello", "world")?;
-    // kv_store.set("dan", "haws")?;
+    try_to!(kv_store.set("hello", "world"), "Couldn't set key");
+    try_to!(kv_store.set("dan", "haws"), "Couldn't set key");
 
     Ok(())
 }
