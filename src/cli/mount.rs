@@ -26,11 +26,15 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
 pub fn run(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `mount` subcommand");
 
-    use crate::try_to;
     use crate::app::backends::dual::sqlite::SqliteKvStore;
-    use crate::app::backends::keyvalue::KeyValueStore;
-    use crate::app::config::KvBackend;
+    use crate::app::backends::dual::sqlite::SqliteMetaStore;
+    use crate::app::config::{KvBackend, MetaBackend};
+    use crate::app::filesystem::PolyfsFilesystem;
 
+    let mountpoint = args
+        .sub
+        .value_of("mountpoint")
+        .expect("Could not load mountpoint arg");
     let config = load_config(args.global)?;
 
     let kv_store;
@@ -40,8 +44,20 @@ pub fn run(args: ArgSet) -> PolyfsResult<()> {
         }
     }
 
-    try_to!(kv_store.set("hello", "world"), "Couldn't set key");
-    try_to!(kv_store.set("dan", "haws"), "Couldn't set key");
+    let meta_store;
+    match config.backends.metadata {
+        MetaBackend::Sqlite(sqlite_config) => {
+            meta_store = SqliteMetaStore::new(sqlite_config);
+        }
+    }
+
+    use std::ffi::OsStr;
+    let fuse_args: &[&OsStr] = &[&OsStr::new("-o"), &OsStr::new("auto_unmount")];
+    let filesystem = PolyfsFilesystem::new(kv_store, meta_store);
+    crate::try_to!(
+        fuse::mount(filesystem, &mountpoint, fuse_args),
+        "Could not mount filesystem"
+    );
 
     Ok(())
 }
