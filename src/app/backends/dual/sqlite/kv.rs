@@ -11,9 +11,10 @@ use diesel::sqlite::SqliteConnection;
 
 use diesel_migrations::embed_migrations;
 
-embed_migrations!("src/app/backends/dual/sqlite/kv-migrations");
+embed_migrations!("src/app/backends/dual/sqlite/kv/kv-migrations");
 
-use super::kv_schema::kv_store;
+mod kv_schema;
+use self::kv_schema::kv_store;
 
 #[derive(Queryable, Insertable)]
 #[table_name = "kv_store"]

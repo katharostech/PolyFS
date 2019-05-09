@@ -21,7 +21,6 @@ pub enum SqliteDb {
 }
 
 pub mod kv;
-pub mod kv_schema;
 pub use self::kv::SqliteKvStore;
 
 pub mod meta;
