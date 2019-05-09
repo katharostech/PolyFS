@@ -1,32 +1,15 @@
 //! Module containing aspects of the global application configuration
 
 use serde::{Serialize, Deserialize};
-use crate::app::backends::dual::sqlite::{SqliteConfig, SqliteDb};
+use crate::app::backends::dual::sqlite::SqliteConfig;
 
-/// Get the default PolyFS configuration
-impl Default for AppConfig {
-    fn default() -> Self {
-        AppConfig {
-            // TODO: Implement default individually the different types
-            backends: BackendConfig {
-                key_value: KvBackend::Sqlite(SqliteConfig {
-                    db: SqliteDb::File("kv.sqlite3".into()),
-                }),
-                metadata: MetaBackend::Sqlite(SqliteConfig {
-                    db: SqliteDb::File("meta.sqlite3".into())
-                })
-            }
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct AppConfig {
     pub backends: BackendConfig
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct BackendConfig {
     pub key_value: KvBackend,
@@ -44,6 +27,12 @@ pub enum KvBackend {
     Sqlite(SqliteConfig)
 }
 
+impl Default for KvBackend {
+    fn default() -> KvBackend {
+        KvBackend::Sqlite(SqliteConfig::default())
+    }
+}
+
 //
 // Metadata Backends
 //
@@ -53,4 +42,10 @@ pub enum KvBackend {
 pub enum MetaBackend {
     #[serde(rename = "sqlite")]
     Sqlite(SqliteConfig)
+}
+
+impl Default for MetaBackend {
+    fn default() -> MetaBackend {
+        MetaBackend::Sqlite(SqliteConfig::default())
+    }
 }

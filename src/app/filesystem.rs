@@ -29,7 +29,7 @@ where
 {
     fn init(&mut self, _req: &Request) -> Result<(), i32> {
         self.meta_store.dummy();       
-        self.kv_store.set("hello", "world").expect("Testing ignore me");
+        self.kv_store.set("hello", "world".as_bytes().to_vec()).expect("Testing ignore me");
 
         Ok(())
     }

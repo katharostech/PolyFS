@@ -20,7 +20,7 @@ use self::kv_schema::kv_store;
 #[table_name = "kv_store"]
 pub struct KvPair {
     pub key: String,
-    pub value: String,
+    pub value: Vec<u8>,
 }
 
 pub struct SqliteKvStore {
@@ -60,7 +60,7 @@ impl SqliteKvStore {
 }
 
 impl KeyValueStore for SqliteKvStore {
-    fn get(&self, key: &str) -> KeyValueResult<Option<String>> {
+    fn get(&self, key: &str) -> KeyValueResult<Option<Vec<u8>>> {
         match kv_store::table
             .filter(kv_store::key.eq(key))
             .get_result::<KvPair>(&self.conn)
@@ -71,7 +71,7 @@ impl KeyValueStore for SqliteKvStore {
         }
     }
 
-    fn set(&self, key: &str, value: &str) -> KeyValueResult<()> {
+    fn set(&self, key: &str, value: Vec<u8>) -> KeyValueResult<()> {
         diesel::replace_into(kv_store::table)
             .values(KvPair {
                 key: key.into(),
@@ -111,10 +111,10 @@ mod test {
         let kv_store = SqliteKvStore::new(DB_CONFIG)?;
 
         // Set a couple values then get them
-        kv_store.set("hello", "world")?;
-        kv_store.set("goodbye", "later")?;
-        assert_eq!(kv_store.get("hello")?.unwrap(), "world");
-        assert_eq!(kv_store.get("goodbye")?.unwrap(), "later");
+        kv_store.set("hello", "world".as_bytes().to_vec())?;
+        kv_store.set("goodbye", "later".as_bytes().to_vec())?;
+        assert_eq!(kv_store.get("hello")?.unwrap(), "world".as_bytes());
+        assert_eq!(kv_store.get("goodbye")?.unwrap(), "later".as_bytes());
 
         Ok(())
     }
@@ -123,10 +123,10 @@ mod test {
     fn set_and_update_key() -> TestResult {
         let kv_store = SqliteKvStore::new(DB_CONFIG)?;
 
-        kv_store.set("hello", "world")?;
-        assert_eq!(kv_store.get("hello")?.unwrap(), "world");
-        kv_store.set("hello", "mister")?;
-        assert_eq!(kv_store.get("hello")?.unwrap(), "mister");
+        kv_store.set("hello", "world".as_bytes().to_vec())?;
+        assert_eq!(kv_store.get("hello")?.unwrap(), "world".as_bytes());
+        kv_store.set("hello", "mister".as_bytes().to_vec())?;
+        assert_eq!(kv_store.get("hello")?.unwrap(), "mister".as_bytes());
 
         Ok(())
     }
@@ -146,8 +146,8 @@ mod test {
         let kv_store = SqliteKvStore::new(DB_CONFIG)?;
 
         // Set a value and make sure it is set
-        kv_store.set("hello", "world")?;
-        assert_eq!(kv_store.get("hello")?.unwrap(), "world");
+        kv_store.set("hello", "world".as_bytes().to_vec())?;
+        assert_eq!(kv_store.get("hello")?.unwrap(), "world".as_bytes());
 
         // Delete a value and make sure it is none afterwards
         kv_store.delete("hello")?;
@@ -160,8 +160,8 @@ mod test {
     fn list_keys() -> TestResult {
         let kv_store = SqliteKvStore::new(DB_CONFIG)?;
 
-        kv_store.set("hello", "world")?;
-        kv_store.set("goodbye", "world")?;
+        kv_store.set("hello", "world".as_bytes().to_vec())?;
+        kv_store.set("goodbye", "world".as_bytes().to_vec())?;
 
         assert_eq!(kv_store.list()?.sort(), vec!["hello", "goodbye"].sort());
 
