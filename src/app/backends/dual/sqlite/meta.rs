@@ -3,6 +3,10 @@
 use super::SqliteConfig;
 use crate::app::backends::metadata::MetadataStore;
 
+use diesel_migrations::embed_migrations;
+
+embed_migrations!("src/app/backends/dual/sqlite/meta/meta-migrations");
+
 /// Metadata store implementation for Sqlite
 pub struct SqliteMetaStore {}
 
@@ -14,6 +18,6 @@ impl SqliteMetaStore {
 
 impl MetadataStore for SqliteMetaStore {
     fn dummy(&self) {
-        println!("SqliteMetaStore.dummy()");
+        println!("Filesystem init!");
     }
 }

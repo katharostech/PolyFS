@@ -1,6 +1,6 @@
 table! {
     kv_store (key) {
-        key -> Text,
+        key -> Nullable<Text>,
         value -> Text,
     }
 }
