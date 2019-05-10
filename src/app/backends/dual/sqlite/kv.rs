@@ -1,20 +1,18 @@
 //! Sqlite key-value store implementation
 
+use super::{SqliteConfig, SqliteDb};
 use crate::app::backends::keyvalue::{KeyValueError, KeyValueResult, KeyValueStore};
 use crate::{PolyfsResult, try_to};
-
-use super::{SqliteConfig, SqliteDb};
 
 use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use diesel::sqlite::SqliteConnection;
-
 use diesel_migrations::embed_migrations;
-
-embed_migrations!("src/app/backends/dual/sqlite/kv/kv-migrations");
 
 mod kv_schema;
 use self::kv_schema::kv_store;
+
+embed_migrations!("src/app/backends/dual/sqlite/kv/kv-migrations");
 
 #[derive(Queryable, Insertable)]
 #[table_name = "kv_store"]
@@ -40,6 +38,7 @@ impl SqliteKvStore {
     pub fn new(config: SqliteConfig) -> PolyfsResult<SqliteKvStore> {
         let db_path = match &config.db {
             SqliteDb::InMemory => ":memory:".into(),
+            SqliteDb::Temporary => "".into(),
             SqliteDb::File(file) => file.clone(),
         };
 

@@ -15,6 +15,8 @@ pub struct SqliteConfig {
 pub enum SqliteDb {
     /// An in-memory Sqlite database for testing
     InMemory,
+    /// A temporary database that will be cleaned up on exit
+    Temporary,
     /// An Sqlite database file
     #[serde(rename = "file")]
     File(String),
@@ -22,7 +24,7 @@ pub enum SqliteDb {
 
 impl Default for SqliteDb {
     fn default() -> SqliteDb {
-        SqliteDb::InMemory
+        SqliteDb::Temporary
     }
 }
 

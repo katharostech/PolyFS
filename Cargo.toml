@@ -17,7 +17,8 @@ edition = "2018"
 
 # FUSE
 fuse = "0.3.1"
-fuse_mt = "0.4.4" # TODO: Still figuring out if we will use this
+time = "0.1.42"
+#fuse_mt = "0.4.4" # TODO: Still figuring out if we will use this
 
 # Commandline Parsing
     # Framework
