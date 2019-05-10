@@ -47,6 +47,29 @@ impl Into<fuse::FileAttr> for MetaFileAttr {
 
 // Wrapper types used for conversions
 
+pub struct FileAttrEncoder(fuse::FileAttr);
+
+impl Into<MetaFileAttr> for FileAttrEncoder {
+    fn into(self) -> MetaFileAttr {
+        MetaFileAttr {
+            ino: self.0.ino.to_le_bytes().to_vec(),
+            size: self.0.size.to_le_bytes().to_vec(),
+            blocks: self.0.blocks.to_le_bytes().to_vec(),
+            atime: DecodedTimespec(self.0.atime).into(),
+            mtime: DecodedTimespec(self.0.mtime).into(),
+            ctime: DecodedTimespec(self.0.ctime).into(),
+            crtime: DecodedTimespec(self.0.crtime).into(),
+            kind: DecodedFileType(self.0.kind).into(),
+            perm: self.0.perm.to_le_bytes().to_vec(),
+            nlink: self.0.nlink.to_le_bytes().to_vec(),
+            uid: self.0.uid.to_le_bytes().to_vec(),
+            gid: self.0.gid.to_le_bytes().to_vec(),
+            rdev: self.0.rdev.to_le_bytes().to_vec(),
+            flags: self.0.flags.to_le_bytes().to_vec(),
+        }
+    }
+}
+
 struct DecodedFileType(FileType);
 
 impl From<String> for DecodedFileType {
