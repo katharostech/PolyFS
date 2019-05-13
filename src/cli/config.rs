@@ -12,9 +12,7 @@ use std::fs;
 use std::io::Write;
 use std::path::Path;
 
-pub mod dual;
-pub mod kv;
-pub mod meta;
+pub mod backend;
 pub mod default;
 
 /// Run `config` subcommand
@@ -22,12 +20,7 @@ pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `config` subcommand");
 
     match args.sub.subcommand() {
-        ("kv", Some(sub)) => kv::run(ArgSet {
-            global: args.global,
-            sub,
-        })?,
-
-        ("meta", Some(sub)) => meta::run(ArgSet {
+        ("backend", Some(sub)) => backend::run(ArgSet {
             global: args.global,
             sub,
         })?,
@@ -56,8 +49,7 @@ pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
 pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
     let mut command = SubCommand::with_name("config")
         .about("Create or update PolyFS config file")
-        .subcommand(kv::get_cli())
-        .subcommand(meta::get_cli())
+        .subcommand(backend::get_cli())
         .subcommand(default::get_cli());
 
     if std::env::var("POLYFS_DEBUG").is_ok() {

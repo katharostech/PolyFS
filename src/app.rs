@@ -2,4 +2,5 @@
 
 pub mod config;
 pub mod backends;
+pub mod keyvalue;
 pub mod filesystem;

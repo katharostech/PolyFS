@@ -31,6 +31,3 @@ impl Default for SqliteDb {
 pub mod kv;
 pub use self::kv::SqliteKvStore;
 
-pub mod meta;
-pub use self::meta::SqliteMetaStore;
-

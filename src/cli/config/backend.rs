@@ -1,22 +1,21 @@
-//! Metadata store configuration subcommand
+//! Key-value store configuration subcommand
 
 use crate::PolyfsResult;
-use crate::cli::config::ArgSet;
+use crate::cli::config::{ArgSet};
 use clap::{App, SubCommand};
 
 // Backends
-use crate::app::backends::BackendType;
-use super::dual::sqlite;
+mod sqlite;
 
-/// Run `meta` subcommand
+/// Run `kv` subcommand
 pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
-    log::debug!("Running `meta` subcommand");
+    log::debug!("Running `backend` subcommand");
 
     match args.sub.subcommand() {
         ("sqlite", Some(sub)) => sqlite::run(ArgSet {
             global: args.global,
             sub,
-        }, BackendType::Metadata)?,
+        })?,
         _ => panic!(
             "Unimplemented command or failure to show help message when lacking a subcommand."
         ),
@@ -25,14 +24,14 @@ pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
     Ok(())
 }
 
-/// Get CLI for the `meta` subcommand
+/// Get CLI for the `kv` subcommand
 #[rustfmt::skip]
 pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("meta")
-        .about("Configure metadata store")
+    SubCommand::with_name("kv")
+        .about("Configure key-value store")
         .long_about(
-"Configure the metadata store. Each subcommand allows you to configure a \
-different supported metadata backend. Only one backend can be used at a time. \
+"Configure the key-value store. Each subcommand allows you to configure a \
+different supported key-value backend. Only one backend can be used at a time. \
 If a backend is configured it will replace any previous backend configuration."
         )
         .subcommand(sqlite::get_cli())

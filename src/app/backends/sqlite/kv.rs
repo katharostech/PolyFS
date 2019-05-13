@@ -1,7 +1,7 @@
 //! Sqlite key-value store implementation
 
 use super::{SqliteConfig, SqliteDb};
-use crate::app::backends::keyvalue::{KeyValueError, KeyValueResult, KeyValueStore};
+use crate::app::keyvalue::{KeyValueError, KeyValueResult, KeyValueStore};
 use crate::{PolyfsResult, try_to};
 
 use diesel::prelude::*;
@@ -12,7 +12,7 @@ use diesel_migrations::embed_migrations;
 mod kv_schema;
 use self::kv_schema::kv_store;
 
-embed_migrations!("src/app/backends/dual/sqlite/kv/kv-migrations");
+embed_migrations!("src/app/backends/sqlite/kv/kv-migrations");
 
 #[derive(Queryable, Insertable)]
 #[table_name = "kv_store"]
@@ -97,7 +97,7 @@ impl KeyValueStore for SqliteKvStore {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::app::backends::keyvalue::KeyValueStore;
+    use crate::app::keyvalue::KeyValueStore;
 
     type TestResult = Result<(), Box<dyn std::error::Error>>;
 

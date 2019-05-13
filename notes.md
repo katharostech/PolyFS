@@ -63,9 +63,7 @@ Map (parent inode, file name) pairs to the inode that it references.
 
 #### `inode_children`
 
-> **Note:** This table would be an optmization designed to speed up directory indexes by preventing the need to scan all of the keys in the `files` table for keys that start with the target `parent inode`.'
->
-> This table therefore may not be necessary, and would represent the potential for the different tables to become inconsistent with eachother. For example, creating a file involves updating both the `file_attributes` table and the `inode_children` tables. If `file_attributes` is updated, the `files` and `inode_children` tables would have to be updated as well, but I don't think there is a way to avoid that anyway. There will always be the fact that multiple tables must be updated for certain actions that cannot be done atomically. These should actually be able to be done in the same transaction to make the whole transaction valid, fixing the issue.
+> **Note:** This table is an optimization that isn't necessarily required, but it prevents iterating over an exess of keys to find out which inodes are linked under the directory.
 
 Map an inode ( directory ) to the list of children as (file name, inode) pairs.
 

@@ -1,16 +1,15 @@
-//! The `config kv/meta sqlite` subcommand
+//! The `config backend sqlite` subcommand
 
 use crate::PolyfsResult;
 use crate::cli::ArgSet;
 use crate::cli::config::{load_config, save_config};
-use crate::app::config::{KvBackend, MetaBackend};
-use crate::app::backends::BackendType;
-use crate::app::backends::dual::sqlite::{SqliteConfig, SqliteDb};
+use crate::app::config::Backend;
+use crate::app::backends::sqlite::{SqliteConfig, SqliteDb};
 
 use clap::{App, Arg, ArgGroup, SubCommand};
 
 /// Run `sqlite` subcommand
-pub fn run<'a>(args: ArgSet, backend: BackendType) -> PolyfsResult<()> {
+pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `sqlite` subcommand");
     let mut config = load_config(args.global)?;
 
@@ -27,10 +26,7 @@ pub fn run<'a>(args: ArgSet, backend: BackendType) -> PolyfsResult<()> {
         }
     };
 
-    match backend {
-        BackendType::KeyValue => config.backends.key_value = KvBackend::Sqlite(sqlite_config),
-        BackendType::Metadata => config.backends.metadata = MetaBackend::Sqlite(sqlite_config),
-    }
+    config.backend = Backend::Sqlite(sqlite_config);
 
     save_config(args.global, &config)?;
 
