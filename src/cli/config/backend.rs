@@ -8,7 +8,7 @@ use clap::{App, SubCommand};
 mod sqlite;
 
 /// Run `kv` subcommand
-pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
+pub fn run(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `backend` subcommand");
 
     match args.sub.subcommand() {
@@ -27,8 +27,8 @@ pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
 /// Get CLI for the `kv` subcommand
 #[rustfmt::skip]
 pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
-    SubCommand::with_name("kv")
-        .about("Configure key-value store")
+    SubCommand::with_name("backend")
+        .about("Configure backend key-value store")
         .long_about(
 "Configure the key-value store. Each subcommand allows you to configure a \
 different supported key-value backend. Only one backend can be used at a time. \

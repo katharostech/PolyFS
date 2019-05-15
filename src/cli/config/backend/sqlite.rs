@@ -9,7 +9,7 @@ use crate::app::backends::sqlite::{SqliteConfig, SqliteDb};
 use clap::{App, Arg, ArgGroup, SubCommand};
 
 /// Run `sqlite` subcommand
-pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
+pub fn run(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `sqlite` subcommand");
     let mut config = load_config(args.global)?;
 

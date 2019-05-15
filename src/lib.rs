@@ -1,5 +1,7 @@
-#[warn(missing_docs)]
-#[warn(future_incompatible)]
+//! The PolyFS distributed filesystem
+
+#![warn(missing_docs)]
+#![warn(future_incompatible)]
 
 #[macro_use]
 extern crate diesel;

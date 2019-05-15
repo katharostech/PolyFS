@@ -30,11 +30,11 @@ impl From<diesel::result::Error> for KeyValueError {
 /// A key value store
 pub trait KeyValueStore {
     /// Get the value of a key
-    fn get(&self, key: &str) -> KeyValueResult<Option<Vec<u8>>>;
+    fn get(&self, key: Vec<u8>) -> KeyValueResult<Option<Vec<u8>>>;
     /// Set the value of a key
-    fn set(&self, key: &str, value: Vec<u8>) -> KeyValueResult<()>;
+    fn set(&self, key: Vec<u8>, value: Vec<u8>) -> KeyValueResult<()>;
     /// Delete a key and its value
-    fn delete(&self, key: &str) -> KeyValueResult<()>;
+    fn delete(&self, key: Vec<u8>) -> KeyValueResult<()>;
     /// List all keys in the store
-    fn list(&self) -> KeyValueResult<Vec<String>>;
+    fn list(&self) -> KeyValueResult<Vec<Vec<u8>>>;
 }

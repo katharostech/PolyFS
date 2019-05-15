@@ -1,4 +1,4 @@
 create table kv_store (
-    key text primary key not null,
+    key blob primary key not null,
     value blob not null
 );

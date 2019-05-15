@@ -6,6 +6,7 @@ use serde::{Serialize, Deserialize};
 #[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields)]
 pub struct SqliteConfig {
+    /// The Sqlite database configuration
     pub db: SqliteDb
 }
 

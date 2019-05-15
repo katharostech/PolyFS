@@ -15,9 +15,11 @@ edition = "2018"
     # Logging framework
     fern = { version = "0.5.8", features = ["colored", "syslog-4"] }
 
-# FUSE
+# FUSE Filesystem
     fuse = "0.3.1"
+    libc = "0.2.54"
     time = "0.1.42"
+    rand = "0.6.5"
 
 # Commandline Parsing
     # Framework

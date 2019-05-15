@@ -14,13 +14,17 @@ use self::kv_schema::kv_store;
 
 embed_migrations!("src/app/backends/sqlite/kv/kv-migrations");
 
+/// A Queryable and Insertable KeyValue pair
 #[derive(Queryable, Insertable)]
 #[table_name = "kv_store"]
 pub struct KvPair {
-    pub key: String,
+    /// The key in the KV pair
+    pub key: Vec<u8>,
+    /// The value in the KV pair
     pub value: Vec<u8>,
 }
 
+/// A Sqlite backed implementation of `KeyValueStore`
 pub struct SqliteKvStore {
     config: SqliteConfig,
     conn: SqliteConnection,
@@ -35,6 +39,7 @@ impl fmt::Debug for SqliteKvStore {
 }
 
 impl SqliteKvStore {
+    /// Instantiate a Sqlite KV store
     pub fn new(config: SqliteConfig) -> PolyfsResult<SqliteKvStore> {
         let db_path = match &config.db {
             SqliteDb::InMemory => ":memory:".into(),
@@ -59,7 +64,7 @@ impl SqliteKvStore {
 }
 
 impl KeyValueStore for SqliteKvStore {
-    fn get(&self, key: &str) -> KeyValueResult<Option<Vec<u8>>> {
+    fn get(&self, key: Vec<u8>) -> KeyValueResult<Option<Vec<u8>>> {
         match kv_store::table
             .filter(kv_store::key.eq(key))
             .get_result::<KvPair>(&self.conn)
@@ -70,27 +75,27 @@ impl KeyValueStore for SqliteKvStore {
         }
     }
 
-    fn set(&self, key: &str, value: Vec<u8>) -> KeyValueResult<()> {
+    fn set(&self, key: Vec<u8>, value: Vec<u8>) -> KeyValueResult<()> {
         diesel::replace_into(kv_store::table)
             .values(KvPair {
-                key: key.into(),
-                value: value.into(),
+                key,
+                value,
             })
             .execute(&self.conn)?;
 
         Ok(())
     }
 
-    fn delete(&self, key: &str) -> KeyValueResult<()> {
+    fn delete(&self, key: Vec<u8>) -> KeyValueResult<()> {
         diesel::delete(kv_store::table.filter(kv_store::key.eq(key))).execute(&self.conn)?;
 
         Ok(())
     }
 
-    fn list(&self) -> KeyValueResult<Vec<String>> {
+    fn list(&self) -> KeyValueResult<Vec<Vec<u8>>> {
         Ok(kv_store::table
             .select(kv_store::key)
-            .load::<String>(&self.conn)?)
+            .load::<Vec<u8>>(&self.conn)?)
     }
 }
 
@@ -110,10 +115,10 @@ mod test {
         let kv_store = SqliteKvStore::new(DB_CONFIG)?;
 
         // Set a couple values then get them
-        kv_store.set("hello", "world".as_bytes().to_vec())?;
-        kv_store.set("goodbye", "later".as_bytes().to_vec())?;
-        assert_eq!(kv_store.get("hello")?.unwrap(), "world".as_bytes());
-        assert_eq!(kv_store.get("goodbye")?.unwrap(), "later".as_bytes());
+        kv_store.set(b"hello".to_vec().to_vec(), "world".as_bytes().to_vec())?;
+        kv_store.set(b"goodbye".to_vec(), "later".as_bytes().to_vec())?;
+        assert_eq!(kv_store.get(b"hello".to_vec())?.unwrap(), "world".as_bytes());
+        assert_eq!(kv_store.get(b"goodbye".to_vec())?.unwrap(), "later".as_bytes());
 
         Ok(())
     }
@@ -122,10 +127,10 @@ mod test {
     fn set_and_update_key() -> TestResult {
         let kv_store = SqliteKvStore::new(DB_CONFIG)?;
 
-        kv_store.set("hello", "world".as_bytes().to_vec())?;
-        assert_eq!(kv_store.get("hello")?.unwrap(), "world".as_bytes());
-        kv_store.set("hello", "mister".as_bytes().to_vec())?;
-        assert_eq!(kv_store.get("hello")?.unwrap(), "mister".as_bytes());
+        kv_store.set(b"hello".to_vec(), "world".as_bytes().to_vec())?;
+        assert_eq!(kv_store.get(b"hello".to_vec())?.unwrap(), "world".as_bytes());
+        kv_store.set(b"hello".to_vec(), "mister".as_bytes().to_vec())?;
+        assert_eq!(kv_store.get(b"hello".to_vec())?.unwrap(), "mister".as_bytes());
 
         Ok(())
     }
@@ -135,7 +140,7 @@ mod test {
         let kv_store = SqliteKvStore::new(DB_CONFIG)?;
 
         // Get a non-existant value
-        assert_eq!(kv_store.get("none")?, None);
+        assert_eq!(kv_store.get(b"none".to_vec())?, None);
 
         Ok(())
     }
@@ -145,12 +150,12 @@ mod test {
         let kv_store = SqliteKvStore::new(DB_CONFIG)?;
 
         // Set a value and make sure it is set
-        kv_store.set("hello", "world".as_bytes().to_vec())?;
-        assert_eq!(kv_store.get("hello")?.unwrap(), "world".as_bytes());
+        kv_store.set(b"hello".to_vec(), "world".as_bytes().to_vec())?;
+        assert_eq!(kv_store.get(b"hello".to_vec())?.unwrap(), "world".as_bytes());
 
         // Delete a value and make sure it is none afterwards
-        kv_store.delete("hello")?;
-        assert_eq!(kv_store.get("hello")?, None);
+        kv_store.delete(b"hello".to_vec())?;
+        assert_eq!(kv_store.get(b"hello".to_vec())?, None);
 
         Ok(())
     }
@@ -159,8 +164,8 @@ mod test {
     fn list_keys() -> TestResult {
         let kv_store = SqliteKvStore::new(DB_CONFIG)?;
 
-        kv_store.set("hello", "world".as_bytes().to_vec())?;
-        kv_store.set("goodbye", "world".as_bytes().to_vec())?;
+        kv_store.set(b"hello".to_vec(), "world".as_bytes().to_vec())?;
+        kv_store.set(b"goodbye".to_vec(), "world".as_bytes().to_vec())?;
 
         assert_eq!(kv_store.list()?.sort(), vec!["hello", "goodbye"].sort());
 

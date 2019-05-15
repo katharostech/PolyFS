@@ -16,7 +16,7 @@ pub mod backend;
 pub mod default;
 
 /// Run `config` subcommand
-pub fn run<'a>(args: ArgSet) -> PolyfsResult<()> {
+pub fn run(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `config` subcommand");
 
     match args.sub.subcommand() {

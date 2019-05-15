@@ -67,7 +67,7 @@ pub fn run() {
     log_config.log_level = match args.value_of("log_level") {
         Some(level) => map_log_level(level),
         None => {
-            map_log_level(&std::env::var("POLYFS_LOG_LEVEL").unwrap_or("warn".into()))
+            map_log_level(&std::env::var("POLYFS_LOG_LEVEL").unwrap_or_else(|_| "warn".into()))
         }
     };
 
@@ -158,7 +158,7 @@ Can be conveniently created and modified with the `config` subcommand."
             .long("log-level")
             .short("L")
             .value_name("level")
-            .possible_values(&vec!["trace", "debug", "info", "warn", "error"]))
+            .possible_values(&["trace", "debug", "info", "warn", "error"]))
         .arg(Arg::with_name("log_file")
             .help("File to log to.")
             .long("log-file")

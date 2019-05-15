@@ -135,9 +135,7 @@ The new files attributes.
 
 #### Strategy
 
-> **TODO:** Figure out how to determine available ino for new files.
-
-1. Get an `ino` for the new file that isn't used by anotherr file
+1. Get an `ino` for the new file that isn't used by another file
 2. Instantiate a new FileAttr struct
 3. Store the new file attrs in the `file_attributes` table
 4. Add a new entry to the `files` table with ( parent inode, filename ) as the key and the new file ino as the value
@@ -161,10 +159,11 @@ N/A
 
 #### Strategy
 
-1. Remove the record from the `files` table with the key ( parent inode, filename )
-2. Update the `inode_children` record for its parent ino to remove this files ino from the list
-3. Remove the `file_attributes` record for the file
-4. Return the callback
+1. Get the inode of the file from the `files` table
+2. Remove the record from the `files` table with the key ( parent inode, filename )
+3. Update the `inode_children` record for its parent ino to remove this files ino from the list
+4. Remove the `file_attributes` record for the file
+5. Return the callback
 
 ### `rmdir()`
 
@@ -219,7 +218,7 @@ List the items in a directory.
 #### Query
 
 - ino
-- fh -- Don't do anything with this until we implement `readdir()`
+- fh -- Don't do anything with this until we implement `opendir()`
 - offset
 
 #### Returns

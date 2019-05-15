@@ -49,7 +49,7 @@ pub fn run(args: ArgSet) -> PolyfsResult<()> {
                 "Could not readline for prompt"
             );
 
-            if &prompt_result.trim() == &"yes" {
+            if prompt_result.trim() == "yes" {
                 write_config()?;
             } else {
                 log::warn!("Not applying config");

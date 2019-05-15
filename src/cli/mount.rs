@@ -26,38 +26,31 @@ pub fn get_cli<'a, 'b>() -> App<'a, 'b> {
 pub fn run(args: ArgSet) -> PolyfsResult<()> {
     log::debug!("Running `mount` subcommand");
 
-    // use crate::app::backends::dual::sqlite::SqliteKvStore;
-    // use crate::app::backends::dual::sqlite::SqliteMetaStore;
-    // use crate::app::config::{KvBackend, MetaBackend};
-    // use crate::app::filesystem::PolyfsFilesystem;
+    use crate::app::backends::sqlite::SqliteKvStore;
+    use crate::app::config::Backend;
+    use crate::app::filesystem::PolyfsFilesystem;
 
-    // let mountpoint = args
-    //     .sub
-    //     .value_of("mountpoint")
-    //     .expect("Could not load mountpoint arg");
-    // let config = load_config(args.global)?;
+    let mountpoint = args
+        .sub
+        .value_of("mountpoint")
+        .expect("Could not load mountpoint arg");
+    let config = load_config(args.global)?;
 
-    // let kv_store;
-    // match config.backends.key_value {
-    //     KvBackend::Sqlite(sqlite_config) => {
-    //         kv_store = SqliteKvStore::new(sqlite_config)?;
-    //     }
-    // }
+    let kv_store;
+    match config.backend {
+        Backend::Sqlite(sqlite_config) => {
+            kv_store = SqliteKvStore::new(sqlite_config)?;
+        }
+    }
 
-    // let meta_store;
-    // match config.backends.metadata {
-    //     MetaBackend::Sqlite(sqlite_config) => {
-    //         meta_store = SqliteMetaStore::new(sqlite_config);
-    //     }
-    // }
+    use std::ffi::OsStr;
+    let fuse_args: &[&OsStr] = &[&OsStr::new("-o"), &OsStr::new("auto_unmount")];
+    let filesystem = PolyfsFilesystem::new(kv_store);
 
-    // use std::ffi::OsStr;
-    // let fuse_args: &[&OsStr] = &[&OsStr::new("-o"), &OsStr::new("auto_unmount")];
-    // let filesystem = PolyfsFilesystem::new(kv_store, meta_store);
-    // crate::try_to!(
-    //     fuse::mount(filesystem, &mountpoint, fuse_args),
-    //     "Could not mount filesystem"
-    // );
+    crate::try_to!(
+        fuse::mount(filesystem, &mountpoint, fuse_args),
+        "Could not mount filesystem"
+    );
 
     Ok(())
 }
