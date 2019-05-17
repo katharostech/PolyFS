@@ -74,18 +74,34 @@ html {
 
   figure {
     width: 100%;
-    &.two-columns {
-      -webkit-column-span: all;
-      column-span: all;
-    }
     margin: 0;
     display: block;
     font-size: 0.8em;
     float: left;
+    
+    &.two-columns {
+      -webkit-column-span: all;
+      column-span: all;
+    }
+
     img, svg {
       max-width: 100%;
       height: auto;
       margin-top: 0;
+    }
+
+    table {
+      border: 1px solid black;
+      margin-bottom: 1em;
+      width: 100%;
+
+      thead {
+        text-align: left;
+      }
+
+      td {
+        padding-left: 0.5rem;
+      }
     }
   }
 }
