@@ -12,7 +12,7 @@
 
 .main-text
   :markdown-it(html=true)
-    # Introduction
+    # Motivation
 
     As an organization with experience running stateful containers in the Cloud with Docker Swarm, we are well acquainted with the need for a distributed Docker storage solution. When running applications on a Docker cluster, you have to have a way to make sure that each application can get to its persisted data. Unlike running an app on a single server, you cannot use the local disc for storage because you never know which server a particular container may start up on. You could constrain your app to run only on a specific server, but that eliminates much of the advantages of having the Docker cluster in the first place. You want to be able to view your cluster as a pool of resources that you can run your applications in, without having to worry about where those resources are comming from.
     
@@ -87,11 +87,23 @@
 
     ## Ease of Use and Simplicity
 
-    One of the highest concerns for PolyFS is ease of use and, by extension, simplicity. Building a distributed filesystem is a difficult job, but running one should not have to be. We want PolyFS to be absolutely as easy to think about, deploy, and manage as possible. Our design seeks to eliminate as many unnecessary components and services as possible. The filesystem should do everything that it can to manage itself so that there is very little operational demand. You should not have to struggle to understand how to run PolyFS wherever you need it.
+    One of the highest concerns for PolyFS is ease of use and, by extension, simplicity. Building a distributed filesystem is a difficult job, but running one should not have to be. We want PolyFS to be as easy as absolutely possible to think about, deploy, and manage. Our design seeks to eliminate as many unnecessary components and services as possible. There is no dependency on any form of external database and the system requirements are limited to having FUSE installed on the machines that mount the filesystem.
+    
+    The filesystem should do everything that it can to manage itself so that there is very little operational demand. You should not have to struggle to understand how to run PolyFS wherever you need it.
 
     ## Performance and Reliability
 
-    Obviously no amount of ease of use is actually useful if the performance and reliability of the system is not adequate. PolyFS will need to perform as well or better than the other existing filesystems and you should have no fear that you data will be any less safe with it than with your local hard drive. Our design decisions should put no bottelneck on how fast the filesystem can perform or on how much storage you can add to the cluster.
+    Obviously no amount of ease of use is actually useful if the performance and reliability of the system is not adequate. PolyFS should perform as well or better than the other existing filesystems and you should have no fear that you data will be any less safe with it than with your local hard drive. Our design decisions should put no bottelneck on how fast the filesystem can perform or on how much storage you can add to the cluster.
+    
+    ## Lightweight
+
+    PolyFS should be able to run on commodity hardware. You should not need an exhorbitant amount of CPU, memory, iops, or storage to successfully deploy PolyFS. PolyFS will use whatever hardware you have and run the filesystem on top of it without complaining. The higher performance your servers, the faster the filesystem will run, but it should not take high performance servers just to get the filesystem functioning properly.
+    
+    PolyFS will do everything it can to use as little system resources as possible with a goal of being able to run PoylFS on the same servers that are running your application workloads. You should not need a dedicated cluster of servers to host PolyFS. You should be able to run it on the servers that you already have and make use of whatever storage is available on those servers. The servers in the cluster can be similar or vastly different in available resources. PolyFS will balance the load of the filesystem across the cluster to maximize performance and availability.
+    
+    ## Scalability
+
+    There should be no limit to the number of servers that PolyFS can scale to. PolyFS will distribute the load evenly across the width of the cluster to balance resource usage and maximize network throughput.
     
     ## Docker Swarm Integration
 
@@ -108,7 +120,71 @@
       **Figure 1:** PolyFS Architecture
 
   :markdown-it(html=true)
-    PolyFS is distributed as either a Docker image or a single binary that is deployed to all the servers in the cluster.
+    PolyFS is distributed as either a Docker image or a single binary that is deployed to all the servers in the cluster. There are only two different kinds of services in PolyFS: the **Waypoint Servers** and the **Storage Servers**.
+    
+    ## Waypoint Servers
+
+    The waypoint servers are stateless services that do one thing: they tell any node attempting to join the cluster who the active cluster leader is. The cluster leader will ping the waypoint servers periodically to make sure that they stay up-to-date.
+    
+    Waypoint servers are incredibly simple and they have only two RPCs:
+
+      * `get_master() -> Ip`
+      * `set_master(Option<Ip>)`
+
+    The waypoint server will store the master IP address set by `set_master()` in memory and return it to any server that calls `get_master()`. The waypoint servers will not incur any practical load on the server that they run on and there is no reason that you cannot run them on the same servers that your storage servers are running on.
+    
+    The Waypoint servers only play a role when new storage servers join the cluster. The cluster join procedure can be seen in **Figure 2**.
+
+  .figure.mermaid
+    include assets/joinProcedure.mmd.svg
+    :markdown-it
+      **Figure 2:** Server Join Procedure
+  
+  :markdown-it(html=true)
+    ### Server Join Procedure
+
+    The list of waypoint servers are provided on the commandline to each PolyFS storage server. When a storage server starts up it selects a random waypoint server to try to get the acting master IP from. If it can't connect to one waypoint server it will try the others in the list. If the storage server connects to the waypoint server and recieves a null address, it will wait a couple heartbeats to make sure that, if there is another master, it will have time to set the master on the waypoint server. Once the server gets the IP of the acting master, it will be able to join to the cluster by contacting the master. If there is no other acting master to be found, the new node will assume it is the only node and start a new cluster.
+    
+    Any number of waypoint servers can be run to make sure that storage servers can join the cluster even if one waypoint server is down.
+    
+    ## Storage Servers
+
+    The storage servers take on all of the the actual work in the cluster and are designed to support every need of the filesystem. All of the elections of cluster masters and other cluster management jobs will be completely automated. An operator will not have to make any distinction between different servers in the cluster; he can view the entire cluster as a cluster of identical servers. This will make it particularly easy to deploy on orchestraters like Docker Swarm and Kubernetes with the ability to scale the service with a push of a button.
+
+    ### Cluster Roles
+    
+    There are three different roles that servers in the cluster may play: **master**, **metadata server**, and **file contents server**. Most likely, all servers in the cluster will serve as metadata and file contents servers, while a few of them will play all three roles. Each role is independent of the other roles, even though they may run on the same server and in the same PolyFS process. The different roles will probably be run in separate threads.
+    
+    All of the server roles are made up of one or more Raft groups that make the functions of the role fault tolerant.
+    
+    #### Master
+    
+    Masters are the "brain" of the cluster. They will check on the availability of nodes in the cluster, how much storage each node has, and they serve as an index to point clients to the servers that have the metadata or file contents that they are looking for. The leader of the Master raft group is responsible for carying out all cluster management tasks such as rebalancing and promoting/demoting nodes.
+    
+    #### Metadata And File Contents Servers
+
+    Metadata servers serve file metadata including file attributes and where to find the file contents on the file contents servers. In a similar way, file contents servers serve the actual data in the files. For both types of servers, the data is split up into chunks and distributed evenly to random locations across the server. The random distribution make sure that there are no hotspots in file access, and the even distribution across the cluster makes sure that the load is spread across all of your servers.
+    
+    Each data chunk is made up of a Raft group that handles replicating the data to provide fault tolerance.
+
+template#page-footer
+  style(type='text/css').
+    .pdfheader {
+      font-size: 10px;
+      color: #aaa;
+      font-family: Helvetica;
+      font-weight: bold;
+      width: 1000px;
+      border-top: 1px solid #aaa;
+      margin-left: 10%;
+      margin-right: 10%;
+      padding-top: 1mm;
+      margin-bottom: -1mm;
+      text-align: center;
+    }
+  
+  .pdfheader Page #[span.pageNumber] / #[span.totalPages]
+
 
 style
   include:scss paper.scss

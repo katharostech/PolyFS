@@ -10,6 +10,17 @@ html {
   font-size: 12px;
 }
 
+.mermaid svg {
+  // Maybe put this in a different class if we need to later.
+  max-height: 4in;
+
+  // This fixes some issues with the letters getting cut off for some reason.
+  // There might be a better way to fix this.
+  .edgelabel {
+    font-size: 0.9em;
+  }
+}
+
 .title {
   text-align: center;
   font-size: 2em;

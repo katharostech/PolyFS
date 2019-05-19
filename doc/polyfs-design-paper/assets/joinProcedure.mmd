@@ -1,0 +1,12 @@
+graph TB
+    minfo[Get Master Address From Waypoint Server]
+    wps(Waypoint Server) -.->|"get_master()"| minfo
+    minfo --> mres{Response}
+    mres -->|Got address| joincluster((Join Cluster))
+    mres -->|Is null| wait[Wait 2 heartbeats]
+    wait --> tryagain[Try Master Address Again]
+    wps -.->|"get_master()"| tryagain
+    tryagain --> res2{Response}
+    res2 -->|Got address| joincluster
+    res2 -->|Still null| makecluster((Instantiate new cluster))
+    makecluster -.->|"set_master()"|wps
