@@ -10,6 +10,10 @@ html {
   font-size: 12px;
 }
 
+.no-justify {
+  text-align: left !important;
+}
+
 .mermaid svg {
   // Maybe put this in a different class if we need to later.
   max-height: 4in;
@@ -34,7 +38,7 @@ html {
   font-size: 1.5em;
 }
 
-%note-box {
+.note-box {
   margin-top: 20px;
   text-align: justify;
   margin-bottom: 20px;
@@ -45,7 +49,6 @@ html {
   padding-right: 30px;
 
   p:first-child:before {
-    content: "ABSTRACT: ";
     font-weight: bold;
     font-size: 0.8em;
     color: #174591;
@@ -53,7 +56,7 @@ html {
 }
 
 .abstract {
-  @extend %note-box;
+  @extend .note-box;
   
   p:first-child:before {
     content: "ABSTRACT: ";
@@ -61,7 +64,7 @@ html {
 }
 
 .note {
-  @extend %note-box;
+  @extend .note-box;
 
   p:first-child:before {
     content: "NOTE: ";
