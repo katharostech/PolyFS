@@ -120,7 +120,7 @@
       **Figure 1:** PolyFS Architecture
 
   :markdown-it(html=true)
-    PolyFS is distributed as either a Docker image or a single binary that is deployed to all the servers in the cluster. There are only two different kinds of services in PolyFS: the **Waypoint Servers** and the **Storage Servers**.
+    PolyFS is distributed as either a Docker image or a single binary that is deployed to all the servers in the cluster. There are only two different kinds of services in PolyFS: the **Waypoint Servers** and the **Cluster Nodes**.
     
     ## Waypoint Servers
 
@@ -128,18 +128,18 @@
     
     Waypoint servers are incredibly simple and they have only two RPCs:
 
-      * `get_master() -> Ip`
-      * `set_master(Option<Ip>)`
+      * `get_master() -> Option<Ip>`
+      * `set_master(Ip)`
 
-    The waypoint server will store the master IP address set by `set_master()` in memory and return it to any server that calls `get_master()`. The waypoint servers will not incur any practical load on the server that they run on and there is no reason that you cannot run them on the same servers that your storage servers are running on.
+    The waypoint server will store the master IP address set by `set_master()` in memory and return it to any server that calls `get_master()`. The waypoint servers will not incur any practical load on the server that they run on and there is no reason that you cannot run them on the same servers that your cluster nodes are running on.
     
-    The Waypoint servers only play a role when new storage servers join the cluster. The cluster join procedure can be seen in **Figure 2**.
+    The Waypoint servers only play a role when new node joins the cluster. The cluster join procedure can be seen in **Figure 2**.
 
     ### Server Join Procedure
 
-    The list of waypoint servers are provided on the commandline to each PolyFS storage server. When a storage server starts up it selects a random waypoint server to try to get the acting master IP from. If it can't connect to one waypoint server it will try the others in the list. If the storage server connects to the waypoint server and recieves a null address, it will wait a couple heartbeats to make sure that, if there is another master, it will have time to register itself on the waypoint server. Once the server gets the IP of the acting master, it will be able to join to the cluster by contacting the master. If there is no other acting master to be found, the new node will assume it is the only node and start a new cluster.
+    The list of waypoint servers are provided on the commandline or in the config for each PolyFS node. When a node starts up it selects a random waypoint server to try to get the acting master IP from. If it can't connect to one waypoint server it will try the others in the list. If the node connects to the waypoint server and recieves a null address, it will wait a couple heartbeats to make sure that, if there is another master, it will have time to register itself on the waypoint server. Once the server gets the IP of the acting master, it will be able to join to the cluster by contacting the master. If there is no other acting master to be found, the new node will assume it is the only node and start a new cluster.
     
-    Any number of waypoint servers can be run to make sure that storage servers can join the cluster even if one waypoint server is down.
+    Any number of waypoint servers can be run to make sure that nodes can join the cluster even if one waypoint server is down.
 
   .figure.mermaid
     include assets/joinProcedure.mmd.svg
@@ -147,48 +147,52 @@
       **Figure 2:** Server Join Procedure
   
   :markdown-it(html=true)
-    ## Storage Servers
+    ## Cluster Nodes
 
-    The storage servers take on all of the the actual work in the cluster and are designed to support every need of the filesystem. All of the elections of cluster masters and other cluster management jobs will be completely automated. An operator will not have to make any distinction between different servers in the cluster; he can view the entire cluster as a cluster of identical servers. This will make it particularly easy to deploy on orchestraters like Docker Swarm and Kubernetes, and it grants the ability to scale the filesystem with a push of a button.
+    The cluster nodes take on all of the the actual work in the cluster and are designed to support every need of the filesystem. All of the elections of cluster masters and other cluster management jobs will be completely automated. An operator will not have to make any distinction between different servers in the cluster; he can view the entire cluster as a cluster of identical servers. This will make it particularly easy to deploy on orchestraters like Docker Swarm and Kubernetes, and it grants the ability to scale the filesystem with a push of a button.
 
     ### Cluster Roles
     
-    There are three different roles that servers in the cluster may play: **master**, **metadata server**, and **chunk server**. Most likely, all servers in the cluster will serve as metadata and chunk servers, while a few of them will additionally play the master role as well.
+    There are two different roles that servers in the cluster may play: **master**, and **data server**. Most likely, all nodes in the cluster will serve as data servers, while a few of them will additionally play the master role as well.
     
   .note-box
     :markdown-it
-      **Implementation Detail:** The different roles that run on the same server will probably be run in separate threads to parallelize their processing. The roles are relatively independent of eachother and should not have to share much, if any, data with each other, which will make the threading easy to implement. Each role thread will use asyncronous processing to handle its communication and storage operations.
+      **Implementation Detail:** The different roles that run on the same server will probably be run in separate threads to parallelize their processing. The roles are relatively independent of eachother and should not have to share much, if any, data with each other, which will make the threading easy to implement. Each role thread will use asyncronous processing to handle its communication and storage operations efficiently.
 
   :markdown-it(html=true)
     ## The Master Role
 
-    Masters are the "brain" of the cluster. They will check on the availability of nodes in the cluster, how much storage each node has, and they serve as an index to point clients to the servers that have the metadata or chunk that they are looking for. The leader of the Master raft group is responsible for carying out all cluster management tasks such as rebalancing and promoting/demoting nodes.
+    Masters are the "brain" of the cluster. They will check on the availability of other nodes in the cluster, how much storage each node has, and they serve as an index to point clients to the nodes that have the data that they are looking for.
     
-    ### Master Group Membership
+    ### The Master Raft Group
 
-    The master role of PolyFS is made up of the Master raft group, which is indicated by the blue boxes in **Figure 1**. The very first PolyFS node that is created will set itself up as the leader and only member of the master raft group. As more nodes are added to the cluster, and the node count reaches three, the leader will automatically register the two new nodes as followers in the master raft group. This grants a fault tolerance of one node. If the node count reaches five or more, the leader will make sure that five servers are a part of the master group to allow for a fault tolerance of two nodes. While the behaviour is configurable, by default, the leader will not add more than five nodes to to the master group because that will reduce the performance of writes to the master group state.
+    The master role of PolyFS is made up of the Master Raft Group ( MRG ), which is indicated by the blue boxes in **Figure 1**. The very first PolyFS node that is created will set itself up as the leader and only member of the MRG. As more nodes are added to the cluster, and the node count reaches three, the leader will automatically register the two new nodes as followers in the MRG. This grants a fault tolerance of one node. If the node count reaches five or more, the leader will make sure that five servers are a part of the MRG to allow for a fault tolerance of two nodes. While the behaviour is configurable, by default, the leader will not add more than five nodes to to the MRG because that will reduce the performance of writes to the replicated state.
    
-    If one of the nodes in the master group go down permanently ( by default that means it is unresponsive for 30 minutes ), the active leader of the master group will select another node in the cluster, if available, and add it to the master group to bring the master member count back up to its goal ( either three or five, as described above ).
+    If one of the nodes in the MRG go down permanently ( by default that means it is unresponsive for 30 minutes ), the active leader will select another node in the cluster, if available, and add it to the MRG to bring the MRG member count back up to its goal ( either three or five, as described above ).
+    
+    #### MRG Leadership Changes
+
+    Whenever the active leader of the MRG changes for any reason, such as node failure, a new leader will be elected according to the Raft algorithm. The newly elected leader will then send an RPC to all other nodes in the cluster notifying them of the change. This will allow the other nodes to instantly switch to sending network requests to the new leader, without having to wait for a request to the old one to timeout. 
     
     ### Cluster Status
 
-    The status of the cluster is monitored by the master leader through heartbeats that are sent to it from every other node in the cluster. The Leader keeps track of each node's IP and information about the node such as available storage space and what metadata and file chunks it stores.
+    The status of the cluster is monitored by the MRG leader through heartbeats that are sent to it from every other node in the cluster. The leader keeps track of each node's IP and information about the node such as available storage space and what file data stores.
     
     ### The Index And Data Access/Placement
 
     Another job of the master cluster is to store the cluster index. The index keeps track of the ranges of metadata and file chunks that reside on the metadata and chunk servers in the cluster. In order to understand the index we have to think about how clients will access file data.
     
-    When a client needs to request file data from the cluster, it will have only a few different queries that will need to make ( function names and types are approximate and there may be other non-listed queries ):
+    When a client needs to request file data from the cluster, it will request the data from the cluster using a number of queries, such as:
     
   .figure.no-justify
     .panel
       :markdown-it
-        * `get_inode_id(parent_inode_id: int, filename: string) -> int`
-        * `get_file_metadata(inode_id: int) -> FileMetadata`
-        * `get_chunk(chunk_id: int) -> ChunkData`
+        * `get_inode_id(parent, filename)`
+        * `get_file_metadata(ino)`
+        * `get_file_chunk(chunk_id)`
  
   :markdown-it(html=true)
-    Each of these queries are made with a set of parameters. Before the actual query is made, the parameters are hashed and then serialize into a byte array. This byte array becomes the key that the data is indexed by in the cluster.
+    Each type of query will request a specific kind of data with a list of parameters to indicate what data to get. For each different kind of query, the results are stored in a virutal "table".
 
     The goal of the index is to to tell clients which server in the cluster holds the data for a particular key. This brings us to how the data is distributed throughout the cluster. The the data asociated to each key is stored in regions of contiguous byte-sorted key-value pairs. Because the keys are hashed before they are stored and storted, the data is guaranteed to be randomly distributed across the cluster, removing the risk of hotspots. Each region of keys are turned into its own raft group that is used to replicate the data and provide fault tolerance. It is the master's job to decide where to put each region in the cluster and to decide when to split a region into two regions so that the data can be rebalanced.
 
