@@ -201,11 +201,21 @@
         * `get_file_chunk(chunk_id)`
  
   :markdown-it(html=true)
-    The goal of the index is to to tell clients which server in the cluster holds the data for a particular query. For example, if a client wants to get the file metadata for inode `1234`, the client will first 
+    The goal of the index is to to tell clients which server in the cluster holds the data for a particular query. For example, if a client wants to get the file metadata for inode `1234`, the client will first serialize the arguments for the query ( in this case just `1234` ) and hash the resulting bytes, this gives it what we call the query "key". The query key uniquely represents a particular piece of data that is sought for a particular type of query. The combination of the query name and the query key represent a pointer to that data that is unique across the cluster.
     
+    Data in the cluster is distributed based on the query name and the key into regions, such that every regeion will hold some amount of data for each different kind of query, and for each kind of query they will hold the data for a contiguous set of byte sorted keys. The regions are then distributed across the nodes in the cluster. This is visualized in **Figure 4**.
+
+  figure
+    .panel
+      include assets/dataPlacement.svg
+    :markdown-it
+      **Figure 4:** Data Placement
+    
+  :markdown-it(hmlt=true)
+    The index stores the greatest and least of the sorted keys that are present on each node for each different kind of query.
+
     This brings us to how the data is distributed throughout the cluster. The the data asociated to each key is stored in regions of contiguous byte-sorted key-value pairs. Because the keys are hashed before they are stored and storted, the data is guaranteed to be randomly distributed across the cluster, removing the risk of hotspots. Each region of keys are turned into its own raft group that is used to replicate the data and provide fault tolerance. It is the master's job to decide where to put each region in the cluster and to decide when to split a region into two regions so that the data can be rebalanced.
 
-  :markdown-it(html=true)
     ## Metadata And Chunk Servers
 
     Metadata servers serve file metadata including file attributes and where to find the file contents on the chunk servers. In a similar way, chunk servers serve the actual data in the files. For both types of servers, the data is split up into chunks and distributed evenly to random locations across the server. The random distribution make sure that there are no hotspots in file access, and the even distribution across the cluster makes sure that the load is spread across all of your servers.
